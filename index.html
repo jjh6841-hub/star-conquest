@@ -25,7 +25,7 @@ window.addEventListener('resize',resize);
 let audioCtx;
 function initAudio(){if(!audioCtx)try{audioCtx=new(window.AudioContext||window.webkitAudioContext)}catch(e){}}
 function sfx(freq,dur,type,vol){
-  if(!audioCtx)return;
+  if(!audioCtx||!game.soundOn)return;
   try{
     const o=audioCtx.createOscillator(),g=audioCtx.createGain();
     o.type=type||'square';o.frequency.value=freq;
@@ -37,11 +37,11 @@ function sfx(freq,dur,type,vol){
 
 // ===== DATA =====
 const UNIT_TYPES=[
-  {id:'scout',name:'정찰 드론',shape:'scout',cost:10,hp:30,dmg:8,spd:3,range:30,atkSpd:1.5,color:'#00ffff',desc:'빠르고 저렴'},
-  {id:'infantry',name:'보병 로봇',shape:'infantry',cost:20,hp:60,dmg:15,spd:2,range:35,atkSpd:1.0,color:'#00ff88',desc:'균형잡힌 전투'},
-  {id:'fighter',name:'전투기',shape:'fighter',cost:35,hp:45,dmg:20,spd:3.5,range:45,atkSpd:1.2,color:'#ff00ff',desc:'빠른 공중유닛',isAir:true},
-  {id:'heavy',name:'중장갑 메카',shape:'heavy',cost:50,hp:150,dmg:25,spd:1,range:35,atkSpd:0.6,color:'#ff8800',desc:'강력한 탱커'},
-  {id:'artillery',name:'포격 전차',shape:'artillery',cost:60,hp:80,dmg:45,spd:0.8,range:160,atkSpd:0.4,color:'#ffff00',desc:'초장거리 포격'},
+  {id:'scout',name:'정찰 드론',shape:'scout',cost:10,hp:30,dmg:8,spd:3,range:30,atkSpd:1.5,color:'#00ffff',desc:'빠르고 저렴한 정찰용 드론. 초반 물량전에 유리합니다.'},
+  {id:'infantry',name:'보병 로봇',shape:'infantry',cost:20,hp:60,dmg:15,spd:2,range:35,atkSpd:1.0,color:'#00ff88',desc:'균형 잡힌 스탯의 기본 전투 유닛. 안정적인 전투력.'},
+  {id:'fighter',name:'전투기',shape:'fighter',cost:35,hp:45,dmg:20,spd:3.5,range:45,atkSpd:1.2,color:'#ff00ff',desc:'빠른 이동과 공격의 공중 유닛. 기습에 탁월.',isAir:true},
+  {id:'heavy',name:'중장갑 메카',shape:'heavy',cost:50,hp:150,dmg:25,spd:1,range:35,atkSpd:0.6,color:'#ff8800',desc:'높은 HP로 전선을 유지하는 탱커. 느리지만 강력.'},
+  {id:'artillery',name:'포격 전차',shape:'artillery',cost:60,hp:80,dmg:45,spd:0.8,range:160,atkSpd:0.4,color:'#ffff00',desc:'초장거리 포격으로 안전하게 딜링. HP 관리 필수.'},
 ];
 
 const PLANETS=[
@@ -81,14 +81,28 @@ const UPGRADES={
   base_hp:{name:'기지 HP',base:80,m:.20,max:10},
 };
 
+const TAB_DEFS=[
+  {name:'정복',icon:'planet'},
+  {name:'부대',icon:'army'},
+  {name:'강화',icon:'upgrade'},
+  {name:'상점',icon:'shop'},
+  {name:'설정',icon:'settings'},
+];
+
 // ===== STATE =====
 let game={
   screen:'MENU',resources:0,unlockedPlanets:1,completed:[],upg:{},
-  currentPlanet:0,energy:0,maxEnergy:100,energyRegen:8,
+  currentPlanet:0,selectedPlanet:0,energy:0,maxEnergy:100,energyRegen:8,
   pBaseHP:0,pBaseMax:500,eBaseHP:0,eBaseMax:0,
   pUnits:[],eUnits:[],projs:[],parts:[],
   espTimer:0,bTime:0,result:null,stars:[],
-  shake:0,_btns:{}
+  shake:0,_btns:{},
+  // lobby
+  lobbyTab:0,selectedUnit:0,
+  // shop
+  dailyClaimed:0,adCooldown:0,starterClaimed:false,boostReward:false,boostEnergy:false,
+  // settings
+  soundOn:true,
 };
 for(let k in UPGRADES)game.upg[k]=0;
 let uid=0;
@@ -107,6 +121,7 @@ function unitStat(t,s){
     default:return t[s];
   }
 }
+function todayKey(){return new Date().toISOString().slice(0,10)}
 
 // ===== STARS =====
 function initStars(){
@@ -272,6 +287,46 @@ function drawBtn(x,y,w,h,txt,bg,fg,on){
 }
 function inBtn(b,px,py){return b&&px>=b.x&&px<=b.x+b.w&&py>=b.y&&py<=b.y+b.h}
 
+// ===== TAB ICONS =====
+function drawTabIcon(type,x,y,sz,color){
+  ctx.save();ctx.translate(x,y);ctx.fillStyle=color;ctx.strokeStyle=color;ctx.lineWidth=1.5;
+  const s=sz;
+  switch(type){
+    case'planet':
+      ctx.beginPath();ctx.arc(0,0,s*.45,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.ellipse(0,0,s*.65,s*.2,-.3,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.arc(0,0,s*.15,0,Math.PI*2);ctx.fill();
+      break;
+    case'army':
+      ctx.beginPath();ctx.arc(0,-s*.25,s*.2,0,Math.PI*2);ctx.fill();
+      ctx.fillRect(-s*.2,0,s*.4,s*.35);
+      ctx.beginPath();ctx.arc(-s*.4,-s*.15,s*.13,0,Math.PI*2);ctx.fill();
+      ctx.fillRect(-s*.53,0,s*.26,s*.25);
+      ctx.beginPath();ctx.arc(s*.4,-s*.15,s*.13,0,Math.PI*2);ctx.fill();
+      ctx.fillRect(s*.27,0,s*.26,s*.25);
+      break;
+    case'upgrade':
+      ctx.beginPath();ctx.moveTo(0,-s*.5);ctx.lineTo(s*.3,-s*.1);ctx.lineTo(s*.15,-s*.1);
+      ctx.lineTo(s*.15,s*.4);ctx.lineTo(-s*.15,s*.4);ctx.lineTo(-s*.15,-s*.1);ctx.lineTo(-s*.3,-s*.1);
+      ctx.closePath();ctx.fill();
+      break;
+    case'shop':
+      ctx.beginPath();ctx.moveTo(0,-s*.5);ctx.lineTo(s*.4,0);ctx.lineTo(0,s*.5);ctx.lineTo(-s*.4,0);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#000';ctx.globalAlpha=.3;
+      ctx.beginPath();ctx.moveTo(0,-s*.2);ctx.lineTo(s*.15,0);ctx.lineTo(0,s*.2);ctx.lineTo(-s*.15,0);ctx.closePath();ctx.fill();
+      ctx.globalAlpha=1;
+      break;
+    case'settings':
+      ctx.beginPath();ctx.arc(0,0,s*.2,0,Math.PI*2);ctx.stroke();
+      for(let i=0;i<6;i++){
+        const a=i*Math.PI/3;
+        ctx.fillRect(-s*.06+Math.cos(a)*s*.35,-s*.06+Math.sin(a)*s*.35,s*.12,s*.12);
+      }
+      break;
+  }
+  ctx.restore();
+}
+
 // ===== BASES =====
 function drawPBase(){
   const x=W*.08,gy=H*.72,t=Date.now()*.001;
@@ -301,7 +356,7 @@ function drawEBase(){
 }
 
 // ===== BACKGROUND =====
-function drawBg(pl){
+function drawBg(pl,tabBar){
   const grad=ctx.createLinearGradient(0,0,0,H*.75);
   grad.addColorStop(0,pl?pl.bgTop:'#050510');grad.addColorStop(1,pl?pl.bgBot:'#0a0a20');
   ctx.fillStyle=grad;ctx.fillRect(0,0,W,H*.75);
@@ -318,9 +373,9 @@ function drawBg(pl){
     ctx.shadowBlur=4;ctx.shadowColor=pl.surface;
     ctx.beginPath();ctx.moveTo(0,H*.72);ctx.lineTo(W,H*.72);ctx.stroke();
     ctx.shadowBlur=0;ctx.globalAlpha=1;
-  }else{ctx.fillStyle='#0a0a15';ctx.fillRect(0,H*.75,W,H*.25)}
-  // bottom panel bg
-  ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(0,H*.82,W,H*.18);
+  }else{
+    ctx.fillStyle='#0a0a15';ctx.fillRect(0,H*.75,W,H*.25);
+  }
 }
 
 // ===== BATTLE LOGIC =====
@@ -346,19 +401,14 @@ function spawnE(){
   for(const e of avail){r-=e.w;if(r<=0){sel=e;break}}
   if(game.eUnits.length<30)game.eUnits.push(mkUnit(sel,true,W*.87));
 }
-
 function updateBattle(dt){
   game.bTime+=dt;
-  // energy
   const maxE=game.maxEnergy*upgMult('energy_max'),regE=game.energyRegen*upgMult('energy_regen');
   game.energy=Math.min(maxE,game.energy+regE*dt);
-  // enemy spawn
   const pl=PLANETS[game.currentPlanet],si=Math.max(.8,pl.spawnInt-game.bTime*.015);
   game.espTimer-=dt;if(game.espTimer<=0){spawnE();game.espTimer=si}
-  // update units
   updUnits(game.pUnits,game.eUnits,1,dt);
   updUnits(game.eUnits,game.pUnits,-1,dt);
-  // base attacks
   const ebx=W*.88,pbx=W*.12;
   for(const u of game.pUnits){
     if(u.state==='DIE')continue;
@@ -374,33 +424,28 @@ function updateBattle(dt){
       if(u.atkT<=0){game.pBaseHP-=u.dmg;u.atkT=1/u.atkSpd;addProj(u.x,u.y,pbx,H*.72-40,u.color);game.shake=4;sfx(150,.15,'sawtooth',.08)}
     }
   }
-  // projectiles
   for(const p of game.projs){p.life-=dt;const pr=1-p.life/p.ml;p.cx=lerp(p.x,p.tx,pr);p.cy=lerp(p.y,p.ty,pr)}
   game.projs=game.projs.filter(p=>p.life>0);
-  // particles
   for(const p of game.parts){p.x+=p.vx*60*dt;p.y+=p.vy*60*dt;p.life-=dt}
   game.parts=game.parts.filter(p=>p.life>0);
-  // shake
   if(game.shake>0){game.shake*=.9;if(game.shake<.3)game.shake=0}
-  // cleanup
   game.pUnits=game.pUnits.filter(u=>u.state!=='DEAD');
   game.eUnits=game.eUnits.filter(u=>u.state!=='DEAD');
-  // win/lose
   if(game.eBaseHP<=0){
     game.result='WIN';game.screen='RESULT';
     const first=!game.completed.includes(game.currentPlanet);
-    game.resources+=first?pl.reward:Math.floor(pl.reward*.3);
+    let reward=first?pl.reward:Math.floor(pl.reward*.3);
+    if(game.boostReward){reward*=2;game.boostReward=false}
+    game.resources+=reward;game._lastReward=reward;
     if(first){game.completed.push(game.currentPlanet);game.unlockedPlanets=Math.max(game.unlockedPlanets,game.currentPlanet+2)}
     saveGame();sfx(523,.15,'sine',.15);setTimeout(()=>sfx(659,.15,'sine',.15),150);setTimeout(()=>sfx(784,.3,'sine',.15),300);
   }
   if(game.pBaseHP<=0){game.result='LOSE';game.screen='RESULT';sfx(200,.3,'sawtooth',.1);setTimeout(()=>sfx(150,.4,'sawtooth',.1),300)}
 }
-
 function hasTarget(u,enemies){
   for(const e of enemies)if(e.state!=='DIE'&&Math.abs(u.x-e.x)<=u.range)return true;
   return false;
 }
-
 function updUnits(units,enemies,dir,dt){
   for(const u of units){
     if(u.state==='DIE'){u.dieT-=dt;if(u.dieT<=0)u.state='DEAD';continue}
@@ -423,6 +468,7 @@ function updUnits(units,enemies,dir,dt){
 }
 
 // ===== SCREENS =====
+
 // --- MENU ---
 function renderMenu(){
   drawBg(null);
@@ -437,44 +483,332 @@ function renderMenu(){
   ctx.save();ctx.translate(W/2,by+bh/2);ctx.scale(p,p);ctx.translate(-W/2,-(by+bh/2));
   game._btns.start=drawBtn(bx,by,bw,bh,'▶  출격하기','#0a2a2a','#0ff');
   ctx.restore();
-  drawText('v1.0',W/2,H*.93,'#333',12);
+  drawText('v1.1',W/2,H*.93,'#333',12);
 }
-function tapMenu(x,y){if(inBtn(game._btns.start,x,y)){game.screen='PLANETS';sfx(1000,.05,'sine',.1)}}
+function tapMenu(x,y){if(inBtn(game._btns.start,x,y)){game.screen='LOBBY';game.lobbyTab=0;sfx(1000,.05,'sine',.1)}}
 
-// --- PLANETS ---
-function renderPlanets(){
+// --- TAB BAR ---
+const TAB_H_RATIO=.13;
+function drawTabBar(){
+  const th=H*TAB_H_RATIO,ty=H-th;
+  // bg
+  ctx.fillStyle='#0a0a12';ctx.fillRect(0,ty,W,th);
+  // top border
+  ctx.strokeStyle='#1a1a2a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,ty);ctx.lineTo(W,ty);ctx.stroke();
+  const tw=W/5;
+  game._btns.tabs=[];
+  for(let i=0;i<5;i++){
+    const tx=i*tw,active=game.lobbyTab===i;
+    const col=active?'#0ff':'#445';
+    // active indicator
+    if(active){
+      ctx.fillStyle='rgba(0,255,255,.06)';ctx.fillRect(tx,ty,tw,th);
+      ctx.shadowBlur=6;ctx.shadowColor='#0ff';
+      ctx.strokeStyle='#0ff';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(tx+8,ty);ctx.lineTo(tx+tw-8,ty);ctx.stroke();
+      ctx.shadowBlur=0;
+    }
+    // icon
+    drawTabIcon(TAB_DEFS[i].icon,tx+tw/2,ty+th*.38,th*.4,col);
+    // label
+    drawText(TAB_DEFS[i].name,tx+tw/2,ty+th*.78,col,Math.min(th*.18,11));
+    game._btns.tabs.push({x:tx,y:ty,w:tw,h:th,i});
+  }
+}
+
+// --- LOBBY HEADER ---
+function drawLobbyHeader(){
+  ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(0,0,W,H*.07);
+  ctx.shadowBlur=8;ctx.shadowColor='#0ff';
+  drawText('STAR CONQUEST',W*.12,H*.035,'#0ff',Math.min(W*.025,16),'center');
+  ctx.shadowBlur=0;
+  drawText('💎 '+game.resources,W*.92,H*.035,'#fc0',Math.min(W*.025,15),'center');
+}
+
+// --- LOBBY ---
+function renderLobby(){
   drawBg(null);
-  drawText('행성 선택',W/2,H*.06,'#0fc',22);
-  drawText('💎 '+game.resources,W*.88,H*.06,'#fc0',16);
-  const pw=Math.min(W*.16,140),ph=H*.5,gap=12;
+  const contentY=H*.07,contentH=H*(1-TAB_H_RATIO)-.07*H;
+  // content bg
+  ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(0,contentY,W,contentH);
+  // render active tab content
+  switch(game.lobbyTab){
+    case 0:renderTabConquest(contentY,contentH);break;
+    case 1:renderTabArmy(contentY,contentH);break;
+    case 2:renderTabUpgrade(contentY,contentH);break;
+    case 3:renderTabShop(contentY,contentH);break;
+    case 4:renderTabSettings(contentY,contentH);break;
+  }
+  drawLobbyHeader();
+  drawTabBar();
+}
+
+// --- TAB 0: CONQUEST ---
+function renderTabConquest(cy,ch){
+  const pw=Math.min(W*.14,120),ph=ch*.75,gap=10;
   const totalW=PLANETS.length*pw+(PLANETS.length-1)*gap;
-  const sx=Math.max(10,(W-totalW)/2),py=H*.14;
+  const sx=Math.max(10,(W-totalW)/2),py=cy+ch*.05;
   game._btns.planets=[];
   for(let i=0;i<PLANETS.length;i++){
     const px=sx+i*(pw+gap),ok=i<game.unlockedPlanets,done=game.completed.includes(i),p=PLANETS[i];
-    ctx.globalAlpha=ok?1:.3;ctx.fillStyle='#111';ctx.strokeStyle=done?'#0f8':(ok?p.surface:'#333');ctx.lineWidth=2;
-    if(ok){ctx.shadowBlur=6;ctx.shadowColor=ctx.strokeStyle}
+    const sel=game.selectedPlanet===i&&ok;
+    ctx.globalAlpha=ok?1:.3;ctx.fillStyle=sel?'#0a1a1a':'#0a0a0a';
+    ctx.strokeStyle=sel?'#0ff':(done?'#0f8':(ok?p.surface:'#222'));ctx.lineWidth=sel?3:1.5;
+    if(sel||done){ctx.shadowBlur=8;ctx.shadowColor=ctx.strokeStyle}
     roundRect(px,py,pw,ph,8);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
-    const cy=py+ph*.3;ctx.fillStyle=p.surface;ctx.globalAlpha=ok?.25:.1;
-    ctx.beginPath();ctx.arc(px+pw/2,cy,pw*.22,0,Math.PI*2);ctx.fill();
-    ctx.globalAlpha=ok?1:.3;ctx.strokeStyle=p.surface;ctx.stroke();
-    drawText(p.name,px+pw/2,cy+pw*.32,p.surface,13);
-    drawText(p.sub,px+pw/2,cy+pw*.32+16,'#888',9);
-    if(done)drawText('✓ 정복',px+pw/2,py+ph-28,'#0f8',10);
-    else if(ok)drawText('도전 가능',px+pw/2,py+ph-28,p.surface,10);
-    else drawText('잠김',px+pw/2,py+ph-28,'#666',10);
-    if(ok)drawText((done?'💎'+Math.floor(p.reward*.3):'💎'+p.reward),px+pw/2,py+ph-12,'#a80',9);
+    // planet circle
+    const circY=py+ph*.28;
+    ctx.fillStyle=p.surface;ctx.globalAlpha=ok?.2:.08;
+    ctx.beginPath();ctx.arc(px+pw/2,circY,pw*.2,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=ok?1:.3;ctx.strokeStyle=p.surface;ctx.lineWidth=1.5;ctx.stroke();
+    // ring
+    ctx.beginPath();ctx.ellipse(px+pw/2,circY,pw*.28,pw*.08,-.2,0,Math.PI*2);ctx.stroke();
+    drawText(p.name,px+pw/2,circY+pw*.28,p.surface,Math.min(pw*.1,12));
+    drawText(p.sub,px+pw/2,circY+pw*.28+14,'#666',Math.min(pw*.08,9));
+    // enemies preview
+    const ey=py+ph*.65;
+    for(let j=0;j<3;j++){
+      const e=p.enemies[j],ex=px+pw*.2+j*(pw*.3);
+      ctx.save();ctx.translate(ex,ey);ctx.scale(-1,1);
+      ctx.fillStyle=e.color;ctx.strokeStyle=e.color;ctx.lineWidth=1;
+      const fn=SHAPES[e.shape];if(fn)fn(ctx,.3,Date.now()*.001);
+      ctx.restore();
+    }
+    // status
+    if(done)drawText('✓ 정복',px+pw/2,py+ph-16,'#0f8',9);
+    else if(ok)drawText(sel?'선택됨':'도전 가능',px+pw/2,py+ph-16,sel?'#0ff':p.surface,9);
+    else drawText('잠김',px+pw/2,py+ph-16,'#444',9);
     ctx.globalAlpha=1;
     if(ok)game._btns.planets.push({x:px,y:py,w:pw,h:ph,i});
   }
-  const uw=Math.min(W*.18,150);
-  game._btns.upg=drawBtn(W/2-uw/2,H*.82,uw,36,'⬆ 업그레이드','#1a1a0a','#fc0');
-  game._btns.back=drawBtn(15,H*.82,80,36,'◀ 뒤로','#1a0a0a','#f44');
+  // deploy button
+  const selP=PLANETS[game.selectedPlanet];
+  if(game.selectedPlanet<game.unlockedPlanets){
+    const dbw=Math.min(W*.18,150),dbh=38;
+    const dbx=W/2-dbw/2,dby=cy+ch-dbh-5;
+    game._btns.deploy=drawBtn(dbx,dby,dbw,dbh,'⚔ 출격!','#0a2a2a','#0ff');
+    // reward info
+    const done=game.completed.includes(game.selectedPlanet);
+    const rw=done?Math.floor(selP.reward*.3):selP.reward;
+    drawText('보상: 💎'+rw+(game.boostReward?' (x2!)':''),W/2,dby-12,game.boostReward?'#0f8':'#a80',10);
+  }
 }
-function tapPlanets(x,y){
-  if(game._btns.planets)for(const b of game._btns.planets)if(inBtn(b,x,y)){startBattle(b.i);return}
-  if(inBtn(game._btns.upg,x,y)){game.screen='UPGRADE';sfx(1000,.05,'sine',.1);return}
-  if(inBtn(game._btns.back,x,y)){game.screen='MENU';sfx(800,.05,'sine',.08)}
+function tapTabConquest(x,y){
+  if(game._btns.planets)for(const b of game._btns.planets)if(inBtn(b,x,y)){game.selectedPlanet=b.i;sfx(600,.04,'sine',.08);return}
+  if(inBtn(game._btns.deploy,x,y)){startBattle(game.selectedPlanet);sfx(1000,.05,'sine',.1)}
+}
+
+// --- TAB 1: ARMY ---
+function renderTabArmy(cy,ch){
+  // unit selector (left)
+  const listW=W*.18,cardX=W*.22,cardW=W*.75;
+  game._btns.armyUnits=[];
+  for(let i=0;i<UNIT_TYPES.length;i++){
+    const u=UNIT_TYPES[i],sel=game.selectedUnit===i;
+    const uh=ch/5-.5,uy=cy+i*uh+i*.5;
+    ctx.fillStyle=sel?'#0a1a1a':'#060608';
+    ctx.strokeStyle=sel?u.color:'#1a1a1a';ctx.lineWidth=sel?2:1;
+    if(sel){ctx.shadowBlur=4;ctx.shadowColor=u.color}
+    roundRect(8,uy,listW-8,uh,4);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+    // mini icon
+    ctx.save();ctx.translate(28,uy+uh/2);
+    ctx.fillStyle=u.color;ctx.strokeStyle=u.color;ctx.lineWidth=1;
+    const fn=SHAPES[u.shape];if(fn)fn(ctx,.35,Date.now()*.001);
+    ctx.restore();
+    drawText(u.name,listW*.55+8,uy+uh/2,sel?u.color:'#888',Math.min(listW*.1,10));
+    game._btns.armyUnits.push({x:8,y:uy,w:listW-8,h:uh,i});
+  }
+  // detail card (right)
+  const u=UNIT_TYPES[game.selectedUnit];
+  const cx2=cardX+10,cw2=W-cardX-20,cy2=cy+8,ch2=ch-16;
+  ctx.fillStyle='#0a0a10';ctx.strokeStyle=u.color;ctx.lineWidth=2;
+  ctx.shadowBlur=6;ctx.shadowColor=u.color;
+  roundRect(cx2,cy2,cw2,ch2,10);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+  // unit preview large
+  const prevX=cx2+cw2*.18,prevY=cy2+ch2*.35;
+  ctx.save();ctx.translate(prevX,prevY);
+  ctx.fillStyle=u.color;ctx.strokeStyle=u.color;ctx.lineWidth=2;
+  ctx.shadowBlur=15;ctx.shadowColor=u.color;
+  const fn2=SHAPES[u.shape];if(fn2)fn2(ctx,1.8,Date.now()*.001);
+  ctx.shadowBlur=0;ctx.restore();
+  // info
+  const ix=cx2+cw2*.4,iy=cy2+ch2*.1;
+  drawText(u.name,ix+cw2*.3,iy,u.color,Math.min(cw2*.06,20));
+  drawText(u.desc,ix+cw2*.3,iy+22,'#888',Math.min(cw2*.03,10));
+  // stats
+  const stats=[
+    {label:'HP',val:unitStat(u,'hp'),base:u.hp,color:'#f44'},
+    {label:'공격력',val:unitStat(u,'dmg'),base:u.dmg,color:'#fa0'},
+    {label:'속도',val:unitStat(u,'spd').toFixed(1),base:u.spd,color:'#0f8'},
+    {label:'사거리',val:u.range,base:u.range,color:'#0af'},
+    {label:'공격속도',val:u.atkSpd+'/s',base:u.atkSpd,color:'#f0f'},
+    {label:'비용',val:'⚡'+u.cost,base:u.cost,color:'#fc0'},
+  ];
+  const sy=iy+45,sh=(ch2-80)/6;
+  for(let i=0;i<stats.length;i++){
+    const s=stats[i],ssy=sy+i*sh;
+    drawText(s.label,ix+20,ssy,s.color,Math.min(cw2*.035,12),'left');
+    drawText(''+s.val,ix+cw2*.55,ssy,'#fff',Math.min(cw2*.035,12),'right');
+    // bar for numeric stats
+    if(typeof s.base==='number'&&i<4){
+      const maxVal=[200,50,4,160][i];
+      const barW2=cw2*.35;
+      drawBar(ix+cw2*.58,ssy-4,barW2,8,typeof s.val==='string'?parseFloat(s.val):s.val,maxVal,s.color);
+    }
+  }
+  // type badge
+  if(u.isAir){
+    drawText('공중 유닛',cx2+cw2-50,cy2+20,'#f0f',10);
+  }
+}
+function tapTabArmy(x,y){
+  if(game._btns.armyUnits)for(const b of game._btns.armyUnits)if(inBtn(b,x,y)){game.selectedUnit=b.i;sfx(600,.04,'sine',.08);return}
+}
+
+// --- TAB 2: UPGRADE ---
+function renderTabUpgrade(cy,ch){
+  const keys=Object.keys(UPGRADES),cols=3,rows=2;
+  const cw=Math.min((W-40-(cols-1)*10)/cols,220),cr=Math.min((ch-20)/rows-8,ch*.45);
+  const tw2=cols*cw+(cols-1)*10,sx=(W-tw2)/2,sy=cy+10;
+  game._btns.upgs=[];
+  for(let i=0;i<keys.length;i++){
+    const k=keys[i],u=UPGRADES[k],lv=game.upg[k],cost=upgCost(k),ok=game.resources>=cost&&lv<u.max,mx=lv>=u.max;
+    const col=i%cols,row=Math.floor(i/cols),cx2=sx+col*(cw+10),cy2=sy+row*(cr+10);
+    ctx.fillStyle='#0a0a10';ctx.strokeStyle=ok?'#fc0':(mx?'#0f8':'#1a1a1a');ctx.lineWidth=ok?2:1;
+    if(ok){ctx.shadowBlur=4;ctx.shadowColor='#fc0'}
+    roundRect(cx2,cy2,cw,cr,8);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+    drawText(u.name,cx2+cw/2,cy2+cr*.18,'#fff',Math.min(cw*.07,14));
+    // level dots
+    const dotY=cy2+cr*.38,dotR=Math.min(cw*.025,4),dotGap=dotR*2.8;
+    const dotsW=u.max*dotGap;
+    for(let j=0;j<u.max;j++){
+      const dx=cx2+cw/2-dotsW/2+j*dotGap+dotR;
+      ctx.fillStyle=j<lv?'#fc0':'#222';
+      ctx.beginPath();ctx.arc(dx,dotY,dotR,0,Math.PI*2);ctx.fill();
+    }
+    // effect
+    const cm=Math.floor((1+lv*u.m)*100);
+    if(!mx){
+      const nm=Math.floor((1+(lv+1)*u.m)*100);
+      drawText(cm+'% → '+nm+'%',cx2+cw/2,cy2+cr*.58,'#8f8',Math.min(cw*.055,11));
+      drawText('💎 '+cost,cx2+cw/2,cy2+cr*.78,ok?'#fc0':'#555',Math.min(cw*.06,13));
+    }else{
+      drawText(cm+'%  MAX',cx2+cw/2,cy2+cr*.58,'#fc0',Math.min(cw*.055,11));
+      drawText('완료',cx2+cw/2,cy2+cr*.78,'#0f8',Math.min(cw*.06,12));
+    }
+    if(ok)game._btns.upgs.push({x:cx2,y:cy2,w:cw,h:cr,k});
+  }
+}
+function tapTabUpgrade(x,y){
+  if(game._btns.upgs)for(const b of game._btns.upgs)if(inBtn(b,x,y)){
+    const cost=upgCost(b.k);
+    if(game.resources>=cost){game.resources-=cost;game.upg[b.k]++;saveGame();sfx(600,.1,'sine',.1)}return;
+  }
+}
+
+// --- TAB 3: SHOP ---
+function renderTabShop(cy,ch){
+  const items=[];
+  // daily reward
+  const claimed=game.dailyClaimed===todayKey();
+  items.push({id:'daily',name:'일일 보급',desc:'매일 무료 자원 획득',reward:'💎 50',color:'#0ff',ok:!claimed,tag:claimed?'수령 완료':'무료'});
+  // ad reward
+  const adOk=game.adCooldown<=0;
+  items.push({id:'ad',name:'보급 요청',desc:'긴급 자원 보급 (30초 대기)',reward:'💎 30',color:'#0f8',ok:adOk,tag:adOk?'무료':Math.ceil(game.adCooldown)+'초'});
+  // starter pack
+  items.push({id:'starter',name:'신병 보급팩',desc:'1회 한정 대량 자원',reward:'💎 200',color:'#f0f',ok:!game.starterClaimed,tag:game.starterClaimed?'수령 완료':'무료'});
+  // boost reward
+  items.push({id:'boost_r',name:'보상 2배 부스터',desc:'다음 전투 보상 2배',reward:'사용',color:'#fa0',ok:game.resources>=100&&!game.boostReward,cost:100,tag:game.boostReward?'적용중':'💎 100'});
+  // boost energy
+  items.push({id:'boost_e',name:'에너지 MAX 충전',desc:'다음 전투 에너지 가득',reward:'사용',color:'#fc0',ok:game.resources>=80&&!game.boostEnergy,cost:80,tag:game.boostEnergy?'적용중':'💎 80'});
+
+  const iw=Math.min((W-40)/items.length-8,180),ih=ch-20,gap=8;
+  const tw2=items.length*iw+(items.length-1)*gap,sx=(W-tw2)/2,sy=cy+10;
+  game._btns.shop=[];
+  for(let i=0;i<items.length;i++){
+    const it=items[i],ix=sx+i*(iw+gap);
+    ctx.fillStyle='#0a0a10';ctx.strokeStyle=it.ok?it.color:'#1a1a1a';ctx.lineWidth=it.ok?2:1;
+    if(it.ok){ctx.shadowBlur=4;ctx.shadowColor=it.color}
+    roundRect(ix,sy,iw,ih,8);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+    // tag badge
+    const tagCol=it.tag==='무료'?'#0f8':(it.ok?it.color:'#555');
+    ctx.fillStyle=tagCol;ctx.globalAlpha=.15;
+    roundRect(ix+iw*.15,sy+8,iw*.7,18,4);ctx.fill();
+    ctx.globalAlpha=1;
+    drawText(it.tag,ix+iw/2,sy+17,tagCol,Math.min(iw*.08,10));
+    // icon area
+    const iconY=sy+ih*.35;
+    ctx.fillStyle=it.color;ctx.globalAlpha=.15;
+    ctx.beginPath();ctx.arc(ix+iw/2,iconY,iw*.18,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
+    drawTabIcon('shop',ix+iw/2,iconY,iw*.25,it.color);
+    // name
+    drawText(it.name,ix+iw/2,sy+ih*.55,it.ok?'#fff':'#666',Math.min(iw*.08,12));
+    // desc
+    drawText(it.desc,ix+iw/2,sy+ih*.67,it.ok?'#888':'#444',Math.min(iw*.06,8));
+    // reward
+    drawText(it.reward,ix+iw/2,sy+ih*.8,it.ok?it.color:'#444',Math.min(iw*.08,13));
+    if(it.ok)game._btns.shop.push({x:ix,y:sy,w:iw,h:ih,id:it.id});
+  }
+}
+function tapTabShop(x,y){
+  if(!game._btns.shop)return;
+  for(const b of game._btns.shop){
+    if(!inBtn(b,x,y))continue;
+    switch(b.id){
+      case'daily':game.resources+=50;game.dailyClaimed=todayKey();break;
+      case'ad':game.resources+=30;game.adCooldown=30;break;
+      case'starter':game.resources+=200;game.starterClaimed=true;break;
+      case'boost_r':if(game.resources>=100){game.resources-=100;game.boostReward=true}break;
+      case'boost_e':if(game.resources>=80){game.resources-=80;game.boostEnergy=true}break;
+    }
+    saveGame();sfx(800,.1,'sine',.12);return;
+  }
+}
+
+// --- TAB 4: SETTINGS ---
+function renderTabSettings(cy,ch){
+  const cx2=W/2,midY=cy+ch/2;
+  game._btns.settings={};
+  // sound toggle
+  const sw=Math.min(W*.25,200),sh=42;
+  game._btns.settings.sound=drawBtn(cx2-sw/2,midY-sh*1.8,sw,sh,
+    '사운드: '+(game.soundOn?'ON':'OFF'),'#0a0a10',game.soundOn?'#0ff':'#555');
+  // reset
+  game._btns.settings.reset=drawBtn(cx2-sw/2,midY-sh*.3,sw,sh,
+    '진행 초기화','#1a0a0a','#f44');
+  // info
+  drawText('STAR CONQUEST v1.1',cx2,midY+sh*1.2,'#333',12);
+  drawText('Canvas + JavaScript',cx2,midY+sh*1.2+18,'#222',10);
+}
+function tapTabSettings(x,y){
+  if(!game._btns.settings)return;
+  if(inBtn(game._btns.settings.sound,x,y)){game.soundOn=!game.soundOn;saveGame();return}
+  if(inBtn(game._btns.settings.reset,x,y)){
+    if(confirm('모든 진행 상황을 초기화하시겠습니까?')){
+      localStorage.removeItem('starConquest');
+      game.resources=0;game.unlockedPlanets=1;game.completed=[];
+      game.dailyClaimed=0;game.starterClaimed=false;game.boostReward=false;game.boostEnergy=false;
+      for(let k in UPGRADES)game.upg[k]=0;
+      game.selectedPlanet=0;
+    }
+  }
+}
+
+// --- LOBBY TAP ---
+function tapLobby(x,y){
+  // tabs first
+  if(game._btns.tabs)for(const b of game._btns.tabs)if(inBtn(b,x,y)){
+    if(game.lobbyTab!==b.i){game.lobbyTab=b.i;sfx(800,.04,'sine',.08)}return;
+  }
+  // tab content
+  switch(game.lobbyTab){
+    case 0:tapTabConquest(x,y);break;
+    case 1:tapTabArmy(x,y);break;
+    case 2:tapTabUpgrade(x,y);break;
+    case 3:tapTabShop(x,y);break;
+    case 4:tapTabSettings(x,y);break;
+  }
 }
 
 // --- BATTLE ---
@@ -483,7 +817,9 @@ function startBattle(pi){
   game.bTime=0;game.espTimer=2;game.result=null;game.shake=0;
   const pl=PLANETS[pi];game.eBaseHP=pl.baseHP;game.eBaseMax=pl.baseHP;
   game.pBaseMax=500*upgMult('base_hp');game.pBaseHP=game.pBaseMax;
-  game.maxEnergy=100*upgMult('energy_max');game.energy=game.maxEnergy*.5;
+  game.maxEnergy=100*upgMult('energy_max');
+  game.energy=game.boostEnergy?game.maxEnergy:game.maxEnergy*.5;
+  game.boostEnergy=false;saveGame();
 }
 function renderBattle(){
   const pl=PLANETS[game.currentPlanet];
@@ -492,14 +828,12 @@ function renderBattle(){
   drawBg(pl);drawPBase();drawEBase();
   const all=[...game.pUnits,...game.eUnits].sort((a,b)=>a.y-b.y);
   for(const u of all)if(u.state!=='DEAD')drawUnit(u);
-  // projectiles
   for(const p of game.projs){
     ctx.save();ctx.strokeStyle=p.color;ctx.lineWidth=2;ctx.shadowBlur=6;ctx.shadowColor=p.color;
     ctx.globalAlpha=p.life/p.ml;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.cx,p.cy);ctx.stroke();
     ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(p.cx,p.cy,3,0,Math.PI*2);ctx.fill();
     ctx.shadowBlur=0;ctx.restore();
   }
-  // particles
   for(const p of game.parts){
     ctx.globalAlpha=p.life/p.ml;ctx.fillStyle=p.color;
     ctx.beginPath();ctx.arc(p.x,p.y,p.sz*(p.life/p.ml),0,Math.PI*2);ctx.fill();
@@ -512,19 +846,20 @@ function renderBattle(){
   drawText('⚡'+Math.floor(game.energy)+'/'+Math.floor(maxE),15+W*.09,H*.02+7,'#fc0',10);
   const m=Math.floor(game.bTime/60),s=Math.floor(game.bTime%60);
   drawText(m+':'+(s<10?'0':'')+s,W-50,H*.04,'#555',11);
+  // bottom panel
+  ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(0,H*.84,W,H*.16);
   // unit buttons
-  const bc=UNIT_TYPES.length,bw=Math.min((W-60)/bc-8,110),bh=H*.14,bgap=8;
-  const tw=bc*bw+(bc-1)*bgap,bsx=(W-tw)/2,bsy=H-bh-8;
+  const bc=UNIT_TYPES.length,bw=Math.min((W-60)/bc-8,110),bh=H*.13,bgap=8;
+  const tw=bc*bw+(bc-1)*bgap,bsx=(W-tw)/2,bsy=H-bh-6;
   game._btns.units=[];
   for(let i=0;i<bc;i++){
     const t=UNIT_TYPES[i],bx=bsx+i*(bw+bgap),ok=game.energy>=t.cost;
     ctx.globalAlpha=ok?1:.45;ctx.fillStyle=ok?'#0a1515':'#0a0a0a';ctx.strokeStyle=ok?t.color:'#333';ctx.lineWidth=ok?2:1;
     if(ok){ctx.shadowBlur=5;ctx.shadowColor=t.color}
     roundRect(bx,bsy,bw,bh,6);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
-    // mini preview
     ctx.save();ctx.translate(bx+bw/2,bsy+bh*.3);
     ctx.fillStyle=t.color;ctx.strokeStyle=t.color;ctx.lineWidth=1.5;
-    const fn=SHAPES[t.shape];if(fn)fn(ctx,.4,Date.now()*.001);
+    const fn=SHAPES[t.shape];if(fn)fn(ctx,.35,Date.now()*.001);
     ctx.restore();
     drawText(t.name,bx+bw/2,bsy+bh*.62,t.color,Math.min(bw*.11,10));
     drawText('⚡'+t.cost,bx+bw/2,bsy+bh*.82,ok?'#fc0':'#555',Math.min(bw*.12,12));
@@ -542,63 +877,38 @@ function renderResult(){
   const win=game.result==='WIN',col=win?'#0f8':'#f44',txt=win?'행성 정복 완료!':'기지가 파괴되었습니다';
   ctx.save();ctx.shadowBlur=20;ctx.shadowColor=col;ctx.fillStyle=col;
   ctx.font='bold '+Math.min(W*.06,40)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(txt,W/2,H*.3);ctx.shadowBlur=0;ctx.restore();
+  ctx.fillText(txt,W/2,H*.28);ctx.shadowBlur=0;ctx.restore();
   if(win){
-    const pl=PLANETS[game.currentPlanet];
-    drawText('획득 자원: 💎 '+(game.completed.filter(p=>p===game.currentPlanet).length<=1?pl.reward:Math.floor(pl.reward*.3)),W/2,H*.45,'#fc0',18);
+    drawText('획득 자원: 💎 '+(game._lastReward||0),W/2,H*.44,'#fc0',18);
     drawText('총 자원: 💎 '+game.resources,W/2,H*.52,'#a80',14);
   }
   const bw=Math.min(W*.22,170),bh=42,g=15;
+  game._btns.rnext=null;game._btns.rretry=null;
   if(win&&game.currentPlanet+1<PLANETS.length){
-    game._btns.rnext=drawBtn(W/2-bw-g/2,H*.65,bw,bh,'다음 행성 ▶','#0a2a0a','#0f8');
-    game._btns.rlist=drawBtn(W/2+g/2,H*.65,bw,bh,'행성 목록','#0a1a2a','#0af');
-  }else{
-    game._btns.rnext=null;
-    game._btns.rretry=drawBtn(W/2-bw-g/2,H*.65,bw,bh,'다시 도전','#2a1a0a','#fa0');
-    game._btns.rlist=drawBtn(W/2+g/2,H*.65,bw,bh,'행성 목록','#0a1a2a','#0af');
+    game._btns.rnext=drawBtn(W/2-bw-g/2,H*.63,bw,bh,'다음 행성 ▶','#0a2a0a','#0f8');
+  }else if(!win){
+    game._btns.rretry=drawBtn(W/2-bw-g/2,H*.63,bw,bh,'다시 도전','#2a1a0a','#fa0');
   }
+  game._btns.rlobby=drawBtn(win&&game.currentPlanet+1<PLANETS.length?W/2+g/2:W/2-bw/2+(win?bw+g:0),H*.63,bw,bh,'기지로 복귀','#0a1a2a','#0af');
+  if(!win)game._btns.rlobby=drawBtn(W/2+g/2,H*.63,bw,bh,'기지로 복귀','#0a1a2a','#0af');
 }
 function tapResult(x,y){
   if(inBtn(game._btns.rnext,x,y)){startBattle(game.currentPlanet+1);sfx(1000,.05,'sine',.1);return}
   if(inBtn(game._btns.rretry,x,y)){startBattle(game.currentPlanet);sfx(1000,.05,'sine',.1);return}
-  if(inBtn(game._btns.rlist,x,y)){game.screen='PLANETS';sfx(800,.05,'sine',.08)}
-}
-
-// --- UPGRADE ---
-function renderUpgrade(){
-  drawBg(null);
-  drawText('업그레이드',W/2,H*.06,'#fc0',22);drawText('💎 '+game.resources,W*.88,H*.06,'#fc0',16);
-  const keys=Object.keys(UPGRADES),cols=3,cw=Math.min(W*.27,210),ch=H*.28,g=12;
-  const rows=Math.ceil(keys.length/cols),tw2=cols*cw+(cols-1)*g;
-  const sx=(W-tw2)/2,sy=H*.15;
-  game._btns.upgs=[];
-  for(let i=0;i<keys.length;i++){
-    const k=keys[i],u=UPGRADES[k],lv=game.upg[k],cost=upgCost(k),ok=game.resources>=cost&&lv<u.max,mx=lv>=u.max;
-    const col=i%cols,row=Math.floor(i/cols),cx=sx+col*(cw+g),cy=sy+row*(ch+g);
-    ctx.fillStyle='#111';ctx.strokeStyle=ok?'#fc0':'#333';ctx.lineWidth=ok?2:1;
-    if(ok){ctx.shadowBlur=4;ctx.shadowColor='#fc0'}
-    roundRect(cx,cy,cw,ch,6);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
-    drawText(u.name,cx+cw/2,cy+ch*.22,'#fff',14);
-    drawText('Lv.'+lv+' / '+u.max,cx+cw/2,cy+ch*.45,'#aaa',11);
-    const cm=Math.floor((1+lv*u.m)*100),nm=Math.floor((1+(lv+1)*u.m)*100);
-    if(!mx)drawText(cm+'% → '+nm+'%',cx+cw/2,cy+ch*.63,'#8f8',10);
-    else drawText(cm+'% (MAX)',cx+cw/2,cy+ch*.63,'#fc0',10);
-    if(!mx)drawText('💎 '+cost,cx+cw/2,cy+ch*.82,ok?'#fc0':'#666',12);
-    if(ok)game._btns.upgs.push({x:cx,y:cy,w:cw,h:ch,k});
-  }
-  game._btns.upgBack=drawBtn(W/2-50,H*.85,100,36,'◀ 돌아가기','#1a0a0a','#f84');
-}
-function tapUpgrade(x,y){
-  if(game._btns.upgs)for(const b of game._btns.upgs)if(inBtn(b,x,y)){
-    const cost=upgCost(b.k);
-    if(game.resources>=cost){game.resources-=cost;game.upg[b.k]++;saveGame();sfx(600,.1,'sine',.1)}return;
-  }
-  if(inBtn(game._btns.upgBack,x,y)){game.screen='PLANETS';sfx(800,.05,'sine',.08)}
+  if(inBtn(game._btns.rlobby,x,y)){game.screen='LOBBY';game.lobbyTab=0;sfx(800,.05,'sine',.08)}
 }
 
 // ===== SAVE/LOAD =====
-function saveGame(){try{localStorage.setItem('starConquest',JSON.stringify({r:game.resources,u:game.unlockedPlanets,c:game.completed,up:game.upg}))}catch(e){}}
-function loadGame(){try{const d=JSON.parse(localStorage.getItem('starConquest'));if(d){game.resources=d.r||0;game.unlockedPlanets=d.u||1;game.completed=d.c||[];game.upg=d.up||{};for(let k in UPGRADES)if(!(k in game.upg))game.upg[k]=0}}catch(e){}}
+function saveGame(){try{localStorage.setItem('starConquest',JSON.stringify({
+  r:game.resources,u:game.unlockedPlanets,c:game.completed,up:game.upg,
+  dc:game.dailyClaimed,sc:game.starterClaimed,br:game.boostReward,be:game.boostEnergy,snd:game.soundOn
+}))}catch(e){}}
+function loadGame(){try{const d=JSON.parse(localStorage.getItem('starConquest'));if(d){
+  game.resources=d.r||0;game.unlockedPlanets=d.u||1;game.completed=d.c||[];game.upg=d.up||{};
+  game.dailyClaimed=d.dc||0;game.starterClaimed=d.sc||false;game.boostReward=d.br||false;game.boostEnergy=d.be||false;
+  if(d.snd!==undefined)game.soundOn=d.snd;
+  for(let k in UPGRADES)if(!(k in game.upg))game.upg[k]=0;
+}}catch(e){}}
 
 // ===== INPUT =====
 function getPos(e){
@@ -611,10 +921,9 @@ function onTap(e){
   const p=getPos(e);
   switch(game.screen){
     case'MENU':tapMenu(p.x,p.y);break;
-    case'PLANETS':tapPlanets(p.x,p.y);break;
+    case'LOBBY':tapLobby(p.x,p.y);break;
     case'BATTLE':tapBattle(p.x,p.y);break;
     case'RESULT':tapResult(p.x,p.y);break;
-    case'UPGRADE':tapUpgrade(p.x,p.y);break;
   }
 }
 canvas.addEventListener('touchstart',onTap,{passive:false});
@@ -624,14 +933,15 @@ canvas.addEventListener('mousedown',onTap);
 let lastT=0;
 function loop(ts){
   const dt=Math.min((ts-lastT)/1000,.05);lastT=ts;
+  // ad cooldown
+  if(game.adCooldown>0)game.adCooldown-=dt;
   ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
   if(game.screen==='BATTLE')updateBattle(dt);
   switch(game.screen){
     case'MENU':renderMenu();break;
-    case'PLANETS':renderPlanets();break;
+    case'LOBBY':renderLobby();break;
     case'BATTLE':renderBattle();break;
     case'RESULT':renderResult();break;
-    case'UPGRADE':renderUpgrade();break;
   }
   requestAnimationFrame(loop);
 }
