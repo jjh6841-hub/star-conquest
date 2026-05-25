@@ -750,7 +750,7 @@ function renderBattleUnitCards(){
 }
 
 // ================================================================
-//  [TAB 1] 카드 — 서브탭: 카드 / 스킬 / 룬 / 영웅
+//  [공용] 서브탭 렌더러
 // ================================================================
 
 function renderSubTabs(names,active,cy,key){
@@ -770,215 +770,79 @@ function renderSubTabs(names,active,cy,key){
   return h+8;
 }
 
-function renderTabCards(cy,ch){
-  const sth=renderSubTabs(CARD_SUB_TABS,game.cardSubTab,cy,'cardSubs');
-  const sy=cy+sth,sh=ch-sth;
-  switch(game.cardSubTab){
-    case 0:renderSubCards(sy,sh);break;
-    case 1:renderSubSkills(sy,sh);break;
-    case 2:renderSubRunes(sy,sh);break;
-    case 3:renderSubEquipment(sy,sh);break;
-  }
-}
-function tapTabCards(x,y){
-  switch(game.cardSubTab){
-    case 0:tapSubCards(x,y);break;
-    case 1:tapSubSkills(x,y);break;
-    case 2:tapSubRunes(x,y);break;
-  }
-}
+// ================================================================
+//  [TAB 1] 던전 — 자원습격 / 보석광산 / 보스도전
+// ================================================================
 
-// --- 카드 서브탭: 카드 ---
-function renderSubCards(cy,ch){
-  drawText('카드 컬렉션',W/2,cy+ch*.02,'#fa0',Math.min(W*.035,18));
-  drawText('공격 x'+game.cardAtkMult.toFixed(2)+'  체력 x'+game.cardHpMult.toFixed(2)+'  식량 x'+game.cardFoodMult.toFixed(2),W/2,cy+ch*.08,'#aaa',Math.min(W*.016,10));
-  const cols=4,rows=3,gw=Math.min(W*.85,620),gh=ch*.50;
-  const gx=(W-gw)/2,gy=cy+ch*.13,cw=gw/cols-6,crh=gh/rows-6;
-  for(let i=0;i<CARD_DEFS.length;i++){
-    const c=CARD_DEFS[i],col=i%cols,row=Math.floor(i/cols);
-    const cx=gx+col*(cw+6),cry=gy+row*(crh+6),owned=game.cardInv[i]>0;
-    ctx.globalAlpha=owned?1:.35;ctx.fillStyle='#0a0a18';ctx.strokeStyle=RARITY_COLORS[c.rarity];ctx.lineWidth=owned?2:1;
-    if(owned){ctx.shadowBlur=5;ctx.shadowColor=RARITY_COLORS[c.rarity]}
-    roundRect(cx,cry,cw,crh,4);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
-    ctx.save();ctx.translate(cx+cw/2,cry+crh*.2);drawCardIcon(c.type,RARITY_COLORS[c.rarity],crh*.12);ctx.restore();
-    drawText(c.name,cx+cw/2,cry+crh*.45,RARITY_COLORS[c.rarity],Math.min(cw*.12,9));
-    drawText(RARITY_NAMES[c.rarity],cx+cw/2,cry+crh*.62,'#666',Math.min(cw*.1,7));
-    drawText(c.desc,cx+cw/2,cry+crh*.78,'#aaa',Math.min(cw*.1,7));
-    if(owned)drawText('x'+game.cardInv[i],cx+cw-10,cry+8,'#fff',Math.min(cw*.12,9));
-    ctx.globalAlpha=1;
-  }
-  const btnY=cy+ch*.82,bw1=Math.min(W*.22,150),bh1=Math.min(ch*.1,34);
-  game._btns.pull1=drawBtn(W/2-bw1-8,btnY,bw1,bh1,'1회 뽑기 💎10','#1a1a0a','#fa0',game.gems>=10);
-  game._btns.pull10=drawBtn(W/2+8,btnY,bw1,bh1,'10회 뽑기 💎90','#1a1a0a','#fa0',game.gems>=90);
-}
-function drawCardIcon(type,color,sz){
-  ctx.fillStyle=color;const s=sz;
-  if(type==='atk'){ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s*.6,s*.3);ctx.lineTo(-s*.6,s*.3);ctx.closePath();ctx.fill();ctx.fillRect(-1,-s*.3,2,s*1.3)}
-  else if(type==='hp'){ctx.beginPath();ctx.moveTo(0,s*.6);ctx.bezierCurveTo(-s,0,-s,-s*.6,0,-s*.2);ctx.bezierCurveTo(s,-s*.6,s,0,0,s*.6);ctx.fill()}
-  else{ctx.fillRect(-s*.6,-s*.2,s*1.2,s*.4);ctx.fillRect(-s*.2,-s*.6,s*.4,s*1.2)}
-}
-function tapSubCards(x,y){
-  if(inBtn(game._btns.pull1,x,y)&&game.gems>=10){game.gems-=10;game.cardPullResult=pullCards(1,false);sfx(523,.15,'sine',.12);return}
-  if(inBtn(game._btns.pull10,x,y)&&game.gems>=90){game.gems-=90;game.cardPullResult=pullCards(10,false);sfx(523,.15,'sine',.12);return}
-}
-
-// --- 카드 뽑기 결과 오버레이 ---
-function renderCardPullOverlay(cy,ch){
-  ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(0,0,W,H);
-  drawText('카드 획득!',W/2,cy+ch*.06,'#fa0',Math.min(W*.04,22));
-  const cards=game.cardPullResult,cols=Math.min(cards.length,5),rows=Math.ceil(cards.length/cols);
-  const cw=Math.min(80,(W*.7)/cols),crh=Math.min(85,ch*.4/rows);
-  const gw=cols*(cw+8)-8,gx=(W-gw)/2,gy=cy+ch*.14;
-  for(let i=0;i<cards.length;i++){
-    const c=cards[i],col=i%cols,row=Math.floor(i/cols);
-    const cx=gx+col*(cw+8),cry=gy+row*(crh+8);
-    ctx.fillStyle='#0a0a20';ctx.strokeStyle=RARITY_COLORS[c.rarity];ctx.lineWidth=2;
-    ctx.shadowBlur=10;ctx.shadowColor=RARITY_COLORS[c.rarity];
-    roundRect(cx,cry,cw,crh,6);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
-    ctx.save();ctx.translate(cx+cw/2,cry+crh*.2);drawCardIcon(c.type,RARITY_COLORS[c.rarity],crh*.12);ctx.restore();
-    drawText(RARITY_NAMES[c.rarity],cx+cw/2,cry+crh*.42,RARITY_COLORS[c.rarity],8);
-    drawText(c.name,cx+cw/2,cry+crh*.6,RARITY_COLORS[c.rarity],Math.min(cw*.13,10));
-    drawText(c.desc,cx+cw/2,cry+crh*.8,'#ccc',Math.min(cw*.1,8));
-  }
-  const bw2=Math.min(W*.2,120);
-  game._btns.pullOk=drawBtn(W/2-bw2/2,cy+ch*.82,bw2,32,'확인','#0a2a0a','#0ff');
-}
-
-// --- 카드 서브탭: 스킬 ---
-function renderSubSkills(cy,ch){
-  drawText('스킬 강화',W/2,cy+ch*.03,'#ff4444',Math.min(W*.035,18));
-  const sc=SKILL_DEFS.length,rh=Math.min(ch*.18,50),gw=Math.min(W*.85,550);
-  const gx=(W-gw)/2,gy=cy+ch*.1;
-  game._btns.skillUp=[];
-  const icons=['⚔','🛡','⚡','🏰'];
-  for(let i=0;i<sc;i++){
-    const s=SKILL_DEFS[i],lv=game.skillLv[i],maxed=lv>=s.maxLv;
-    const ry=gy+i*(rh+6);
-    ctx.fillStyle='#0a0a18';ctx.strokeStyle=maxed?'#555':s.color;ctx.lineWidth=maxed?1:1.5;
-    roundRect(gx,ry,gw,rh,5);ctx.fill();ctx.stroke();
-    drawText(icons[i],gx+rh/2,ry+rh/2,'#fff',Math.min(rh*.4,18));
-    drawText(s.name,gx+rh+10,ry+rh*.3,s.color,Math.min(W*.02,12),'left');
-    const pct=Math.round(s.perLv*lv*100);
-    drawText(s.desc+' +'+pct+'%',gx+rh+10,ry+rh*.7,'#aaa',Math.min(W*.015,9),'left');
-    drawText('Lv.'+lv+'/'+s.maxLv,gx+gw*.55,ry+rh/2,'#fff',Math.min(W*.018,11));
-    if(!maxed){
-      const cost=skillCost(i),can=game.coins>=cost;
-      const bw=Math.min(gw*.22,100),bx=gx+gw-bw-8;
-      game._btns.skillUp[i]=drawBtn(bx,ry+(rh-28)/2,bw,28,'💰'+cost,'#0a1a0a','#0f8',can);
-    }else{drawText('MAX',gx+gw-40,ry+rh/2,'#fa0',11)}
-  }
-}
-function tapSubSkills(x,y){
-  if(!game._btns.skillUp)return;
-  for(let i=0;i<SKILL_DEFS.length;i++){
-    if(inBtn(game._btns.skillUp[i],x,y)&&game.skillLv[i]<SKILL_DEFS[i].maxLv){
-      const cost=skillCost(i);
-      if(game.coins>=cost){game.coins-=cost;game.skillLv[i]++;recalcStats();saveGame();sfx(523,.1,'sine',.1)}return}
-  }
-}
-
-// --- 카드 서브탭: 룬 ---
-function drawRuneHex(x,y,sz,color,rarity){
-  ctx.save();ctx.translate(x,y);const s=sz;
-  ctx.fillStyle=color;ctx.strokeStyle=color;ctx.lineWidth=1.5;
-  ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3-Math.PI/6;i===0?ctx.moveTo(Math.cos(a)*s,Math.sin(a)*s):ctx.lineTo(Math.cos(a)*s,Math.sin(a)*s)}ctx.closePath();
-  ctx.globalAlpha=.25;ctx.fill();ctx.globalAlpha=1;ctx.stroke();
-  if(rarity>=1){ctx.globalAlpha=.4;ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3-Math.PI/6;i===0?ctx.moveTo(Math.cos(a)*s*.5,Math.sin(a)*s*.5):ctx.lineTo(Math.cos(a)*s*.5,Math.sin(a)*s*.5)}ctx.closePath();ctx.fill();ctx.globalAlpha=1}
-  if(rarity>=2){ctx.shadowBlur=6;ctx.shadowColor=color;ctx.beginPath();ctx.arc(0,0,s*.2,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0}
-  ctx.restore();
-}
-function renderSubRunes(cy,ch){
-  drawText('룬 장착',W/2,cy+ch*.03,'#ffcc00',Math.min(W*.035,18));
-  // equipped slots
-  const slotSz=Math.min(ch*.22,55),slotGap=12;
-  const eqY=cy+ch*.1,eqGW=3*(slotSz+slotGap)-slotGap,eqX=(W-eqGW)/2;
-  game._btns.runeSlots=[];
-  drawText('장착 중',eqX-5,eqY+slotSz/2,'#888',9,'right');
-  for(let i=0;i<3;i++){
-    const sx=eqX+i*(slotSz+slotGap);
-    ctx.fillStyle='#0a0a18';ctx.strokeStyle='#444';ctx.lineWidth=1;ctx.setLineDash([4,4]);
-    roundRect(sx,eqY,slotSz,slotSz,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);
-    const rid=game.runeEquipped[i];
-    if(rid!=null){const r=RUNE_DEFS[rid];
-      ctx.strokeStyle=r.color;ctx.lineWidth=2;roundRect(sx,eqY,slotSz,slotSz,5);ctx.stroke();
-      drawRuneHex(sx+slotSz/2,eqY+slotSz*.35,slotSz*.25,r.color,r.rarity);
-      drawText(r.name,sx+slotSz/2,eqY+slotSz*.78,r.color,Math.min(slotSz*.16,8));
-    }else{drawText('+',sx+slotSz/2,eqY+slotSz/2,'#333',18)}
-    game._btns.runeSlots.push({x:sx,y:eqY,w:slotSz,h:slotSz});
-  }
-  // inventory
-  const invY=eqY+slotSz+15;
-  drawText('보유 룬',W/2,invY-5,'#888',9);
-  const cols=Math.min(RUNE_DEFS.length,5),rw=Math.min((W*.8)/cols-6,80),rrh=Math.min(ch*.35,70);
-  const igw=Math.min(cols*(rw+6)-6,W*.85),igx=(W-igw)/2;
-  game._btns.runeItems=[];
-  const rows2=Math.ceil(RUNE_DEFS.length/cols);
-  for(let i=0;i<RUNE_DEFS.length;i++){
-    const r=RUNE_DEFS[i],col=i%cols,row=Math.floor(i/cols);
-    const rx=igx+col*(rw+6),ry=invY+5+row*(rrh+4),owned=game.runeInv[i]>0;
-    ctx.globalAlpha=owned?1:.3;ctx.fillStyle='#0a0a18';ctx.strokeStyle=r.color;ctx.lineWidth=owned?1.5:1;
-    roundRect(rx,ry,rw,rrh,4);ctx.fill();ctx.stroke();
-    drawRuneHex(rx+rw/2,ry+rrh*.3,Math.min(rw*.18,12),r.color,r.rarity);
-    drawText(r.name,rx+rw/2,ry+rrh*.6,r.color,Math.min(rw*.12,8));
-    drawText(RARITY_NAMES[r.rarity],rx+rw/2,ry+rrh*.75,'#666',Math.min(rw*.1,7));
-    if(owned)drawText('x'+game.runeInv[i],rx+rw-8,ry+6,'#fff',8);
-    ctx.globalAlpha=1;
-    if(owned)game._btns.runeItems.push({x:rx,y:ry,w:rw,h:rrh,id:i});
-  }
-}
-function tapSubRunes(x,y){
-  if(game._btns.runeSlots)for(let i=0;i<3;i++){
-    if(inBtn(game._btns.runeSlots[i],x,y)&&game.runeEquipped[i]!=null){
-      game.runeInv[game.runeEquipped[i]]++;game.runeEquipped[i]=null;
-      recalcStats();saveGame();sfx(400,.08,'sine',.08);return}}
-  if(game._btns.runeItems)for(const b of game._btns.runeItems){
-    if(inBtn(b,x,y)&&game.runeInv[b.id]>0){
-      const slot=game.runeEquipped.indexOf(null);
-      if(slot>=0){game.runeInv[b.id]--;game.runeEquipped[slot]=b.id;recalcStats();saveGame();sfx(600,.08,'sine',.08)}return}}
-}
-
-// --- 카드 서브탭: 영웅(장비) ---
-function drawPilot(x,y,s){
-  ctx.save();ctx.translate(x,y);
-  ctx.fillStyle='#1a3a5a';ctx.beginPath();ctx.arc(0,-22*s,13*s,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#0ff';ctx.globalAlpha=.4;ctx.beginPath();ctx.arc(0,-22*s,9*s,-.3,Math.PI+.3,true);ctx.fill();ctx.globalAlpha=1;
-  ctx.fillStyle='#2a4a6a';ctx.fillRect(-11*s,-9*s,22*s,24*s);
-  ctx.fillRect(-17*s,-7*s,6*s,18*s);ctx.fillRect(11*s,-7*s,6*s,18*s);
-  ctx.fillRect(-9*s,15*s,7*s,12*s);ctx.fillRect(2*s,15*s,7*s,12*s);
-  ctx.fillStyle='#fa0';ctx.fillRect(-11*s,9*s,22*s,3*s);
-  ctx.restore();
-}
-function drawEquipIcon(type,x,y,sz){
-  ctx.save();ctx.translate(x,y);ctx.fillStyle='#556';ctx.strokeStyle='#556';const s=sz;
-  switch(type){
-    case'weapon':ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(0,s*.6);ctx.stroke();ctx.beginPath();ctx.moveTo(-s*.4,s*.15);ctx.lineTo(s*.4,s*.15);ctx.stroke();ctx.beginPath();ctx.moveTo(-s*.12,-s);ctx.lineTo(0,-s*1.15);ctx.lineTo(s*.12,-s);ctx.closePath();ctx.fill();break;
-    case'helmet':ctx.beginPath();ctx.arc(0,-s*.05,s*.55,Math.PI,0);ctx.lineTo(s*.55,s*.3);ctx.lineTo(-s*.55,s*.3);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(0,255,255,.2)';ctx.fillRect(-s*.35,s*.05,s*.7,s*.15);break;
-    case'armor':ctx.beginPath();ctx.moveTo(-s*.5,-s*.5);ctx.lineTo(s*.5,-s*.5);ctx.lineTo(s*.55,s*.5);ctx.lineTo(-s*.55,s*.5);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(255,255,255,.15)';ctx.fillRect(-s*.12,-s*.35,s*.24,s*.45);break;
-    case'shoes':ctx.fillRect(-s*.45,-s*.15,s*.3,s*.5);ctx.fillRect(s*.15,-s*.15,s*.3,s*.5);ctx.fillRect(-s*.45,s*.2,s*.45,s*.15);ctx.fillRect(s*.15,s*.2,s*.45,s*.15);break;
-    case'necklace':ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,-s*.15,s*.35,0,Math.PI);ctx.stroke();ctx.beginPath();ctx.moveTo(0,s*.2);ctx.lineTo(-s*.18,s*.45);ctx.lineTo(s*.18,s*.45);ctx.closePath();ctx.fill();break;
-    case'ring':ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,s*.05,s*.35,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(0,-s*.3,s*.12,0,Math.PI*2);ctx.fill();break;
-  }
-  ctx.restore();
-}
-function renderSubEquipment(cy,ch){
-  drawText('영웅 장비',W/2,cy+ch*.03,'#0ff',Math.min(W*.035,18));
-  const cx=W/2,my=cy+ch*.5;
-  drawPilot(cx,my,Math.min(ch*.012,1));
-  const slotSz=Math.min(ch*.2,48),gap=slotSz*.3;
-  const positions=[
-    {x:cx-slotSz*1.8,y:my-slotSz*1.1},{x:cx,y:my-slotSz*1.8},{x:cx+slotSz*1.8,y:my-slotSz*1.1},
-    {x:cx-slotSz*1.8,y:my+slotSz*.5},{x:cx,y:my+slotSz*1.2},{x:cx+slotSz*1.8,y:my+slotSz*.5},
-  ];
-  for(let i=0;i<6;i++){
-    const p=positions[i],eq=EQUIP_SLOTS[i];
-    ctx.fillStyle='#0a0a18';ctx.strokeStyle='#334';ctx.lineWidth=1;ctx.setLineDash([4,4]);
-    roundRect(p.x-slotSz/2,p.y-slotSz/2,slotSz,slotSz,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);
-    if(game.equipment[i]){
-      drawText('?',p.x,p.y,'#0ff',14);
+// --- 던전: 렌더 ---
+function renderTabDungeon(cy,ch){
+  drawText('던전',W/2,cy+ch*.04,'#0af',Math.min(W*.04,20));
+  const dc=DUNGEON_DEFS.length,cw=Math.min((W*.9)/dc-10,200),crh=ch*.72;
+  const gw=dc*(cw+10)-10,gx=(W-gw)/2,gy=cy+ch*.11,now=Date.now();
+  game._btns.dungeonEnter=[];
+  for(let i=0;i<dc;i++){
+    const d=DUNGEON_DEFS[i],cx=gx+i*(cw+10),onCD=game.dungeonCD[i]>now,isActive=game.dungeonActive===i;
+    ctx.fillStyle=isActive?'#1a1a0a':'#0a0a15';ctx.strokeStyle=d.color;ctx.lineWidth=isActive?2:1;
+    if(isActive){ctx.shadowBlur=6;ctx.shadowColor=d.color}
+    roundRect(cx,gy,cw,crh,6);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+    ctx.save();ctx.translate(cx+cw/2,gy+crh*.13);drawDungeonIcon(i,d.color);ctx.restore();
+    drawText(d.name,cx+cw/2,gy+crh*.28,d.color,Math.min(cw*.13,14));
+    drawText(d.desc,cx+cw/2,gy+crh*.38,'#aaa',Math.min(cw*.08,9));
+    drawText('쿨타임: '+formatTime(d.cd),cx+cw/2,gy+crh*.48,'#666',Math.min(cw*.07,8));
+    if(isActive){
+      drawBar(cx+10,gy+crh*.56,cw-20,10,game.dungeonTimer,d.dur,d.color);
+      drawText('전투 중...',cx+cw/2,gy+crh*.7,d.color,Math.min(cw*.1,12));
+      const dots='.'.repeat(Math.floor(Date.now()/400)%4);
+      drawText(dots,cx+cw/2+30,gy+crh*.7,d.color,12);
+    }else if(onCD){
+      const remain=Math.ceil((game.dungeonCD[i]-now)/1000);
+      drawText('⏱ '+formatTime(remain),cx+cw/2,gy+crh*.63,'#f44',Math.min(cw*.1,12));
+      drawBar(cx+10,gy+crh*.72,cw-20,6,d.cd-remain,d.cd,'#333');
     }else{
-      drawEquipIcon(eq.id,p.x,p.y,slotSz*.25);
+      game._btns.dungeonEnter[i]=drawBtn(cx+10,gy+crh*.58,cw-20,crh*.14,'⚔ 입장','#0a2a0a','#0f8');
     }
-    drawText(eq.name,p.x,p.y+slotSz/2+10,'#556',Math.min(slotSz*.2,9));
+    drawText('보상:',cx+cw/2,gy+crh*.82,'#555',Math.min(cw*.07,8));
+    if(i===0)drawText('💰 코인 대량',cx+cw/2,gy+crh*.9,'#fc0',Math.min(cw*.08,9));
+    else if(i===1)drawText('💎 보석 + 코인',cx+cw/2,gy+crh*.9,'#0fc',Math.min(cw*.08,9));
+    else drawText('🃏 카드 + 💎룬 + 코인',cx+cw/2,gy+crh*.9,'#f88',Math.min(cw*.08,9));
+  }
+}
+function drawDungeonIcon(id,color){
+  ctx.fillStyle=color;const s=14;
+  switch(id){
+    case 0:ctx.beginPath();ctx.arc(-3,-3,s*.5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.5;ctx.beginPath();ctx.arc(3,3,s*.5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;break;
+    case 1:ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s*.7,0);ctx.lineTo(0,s);ctx.lineTo(-s*.7,0);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.globalAlpha=.3;ctx.beginPath();ctx.moveTo(0,-s*.4);ctx.lineTo(s*.25,0);ctx.lineTo(0,s*.1);ctx.closePath();ctx.fill();ctx.globalAlpha=1;break;
+    case 2:ctx.beginPath();ctx.arc(0,-2,s*.7,0,Math.PI*2);ctx.fill();ctx.fillRect(-s*.35,s*.15,s*.7,s*.3);ctx.fillStyle='#000';ctx.beginPath();ctx.arc(-3,-3,2.5,0,Math.PI*2);ctx.arc(3,-3,2.5,0,Math.PI*2);ctx.fill();break;
+  }
+}
+
+// --- 던전: 결과 오버레이 ---
+function renderDungeonResultOverlay(cy,ch){
+  const r=game.dungeonResult;
+  ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(0,0,W,H);
+  drawText('던전 클리어!',W/2,cy+ch*.12,'#0f8',Math.min(W*.04,22));
+  drawText(DUNGEON_DEFS[r.type].name,W/2,cy+ch*.22,DUNGEON_DEFS[r.type].color,Math.min(W*.03,16));
+  let ry=cy+ch*.35;
+  if(r.coins>0){drawText('💰 '+r.coins+' 코인',W/2,ry,'#fc0',15);ry+=28}
+  if(r.gems>0){drawText('💎 '+r.gems+' 보석',W/2,ry,'#0f8',15);ry+=28}
+  if(r.card>=0){const c=CARD_DEFS[r.card];
+    ctx.save();ctx.shadowBlur=8;ctx.shadowColor=RARITY_COLORS[c.rarity];
+    drawText('🃏 '+c.name+' ('+RARITY_NAMES[c.rarity]+')',W/2,ry,RARITY_COLORS[c.rarity],15);
+    ctx.shadowBlur=0;ctx.restore();ry+=28}
+  if(r.rune>=0){const rn=RUNE_DEFS[r.rune];
+    ctx.save();ctx.shadowBlur=8;ctx.shadowColor=rn.color;
+    drawText('💎 '+rn.name+' ('+RARITY_NAMES[rn.rarity]+')',W/2,ry,rn.color,15);
+    ctx.shadowBlur=0;ctx.restore()}
+  const bw2=Math.min(W*.2,120);
+  game._btns.dungeonOk=drawBtn(W/2-bw2/2,cy+ch*.78,bw2,35,'확인','#0a2a0a','#0ff');
+}
+
+// --- 던전: 터치 ---
+function tapTabDungeon(x,y){
+  if(game.dungeonActive>=0)return;
+  for(let i=0;i<DUNGEON_DEFS.length;i++){
+    if(inBtn(game._btns.dungeonEnter[i],x,y)&&game.dungeonCD[i]<=Date.now()){
+      game.dungeonActive=i;game.dungeonTimer=0;sfx(400,.1,'square',.08);return}
   }
 }
 
@@ -1190,81 +1054,218 @@ function tapSubEvolution(x,y){
 }
 
 // ================================================================
-//  [TAB 3] 던전 — 자원습격 / 보석광산 / 보스도전
+//  [TAB 3] 카드 — 서브탭: 카드 / 스킬 / 룬 / 영웅
 // ================================================================
 
-// --- 던전: 렌더 ---
-function renderTabDungeon(cy,ch){
-  drawText('던전',W/2,cy+ch*.04,'#0af',Math.min(W*.04,20));
-  const dc=DUNGEON_DEFS.length,cw=Math.min((W*.9)/dc-10,200),crh=ch*.72;
-  const gw=dc*(cw+10)-10,gx=(W-gw)/2,gy=cy+ch*.11,now=Date.now();
-  game._btns.dungeonEnter=[];
-  for(let i=0;i<dc;i++){
-    const d=DUNGEON_DEFS[i],cx=gx+i*(cw+10),onCD=game.dungeonCD[i]>now,isActive=game.dungeonActive===i;
-    ctx.fillStyle=isActive?'#1a1a0a':'#0a0a15';ctx.strokeStyle=d.color;ctx.lineWidth=isActive?2:1;
-    if(isActive){ctx.shadowBlur=6;ctx.shadowColor=d.color}
-    roundRect(cx,gy,cw,crh,6);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
-    // icon
-    ctx.save();ctx.translate(cx+cw/2,gy+crh*.13);drawDungeonIcon(i,d.color);ctx.restore();
-    drawText(d.name,cx+cw/2,gy+crh*.28,d.color,Math.min(cw*.13,14));
-    drawText(d.desc,cx+cw/2,gy+crh*.38,'#aaa',Math.min(cw*.08,9));
-    drawText('쿨타임: '+formatTime(d.cd),cx+cw/2,gy+crh*.48,'#666',Math.min(cw*.07,8));
-    if(isActive){
-      drawBar(cx+10,gy+crh*.56,cw-20,10,game.dungeonTimer,d.dur,d.color);
-      drawText('전투 중...',cx+cw/2,gy+crh*.7,d.color,Math.min(cw*.1,12));
-      // animated dots
-      const dots='.'.repeat(Math.floor(Date.now()/400)%4);
-      drawText(dots,cx+cw/2+30,gy+crh*.7,d.color,12);
-    }else if(onCD){
-      const remain=Math.ceil((game.dungeonCD[i]-now)/1000);
-      drawText('⏱ '+formatTime(remain),cx+cw/2,gy+crh*.63,'#f44',Math.min(cw*.1,12));
-      drawBar(cx+10,gy+crh*.72,cw-20,6,d.cd-remain,d.cd,'#333');
-    }else{
-      game._btns.dungeonEnter[i]=drawBtn(cx+10,gy+crh*.58,cw-20,crh*.14,'⚔ 입장','#0a2a0a','#0f8');
-    }
-    // reward preview
-    drawText('보상:',cx+cw/2,gy+crh*.82,'#555',Math.min(cw*.07,8));
-    if(i===0)drawText('💰 코인 대량',cx+cw/2,gy+crh*.9,'#fc0',Math.min(cw*.08,9));
-    else if(i===1)drawText('💎 보석 + 코인',cx+cw/2,gy+crh*.9,'#0fc',Math.min(cw*.08,9));
-    else drawText('🃏 카드 + 💎룬 + 코인',cx+cw/2,gy+crh*.9,'#f88',Math.min(cw*.08,9));
+function renderTabCards(cy,ch){
+  const sth=renderSubTabs(CARD_SUB_TABS,game.cardSubTab,cy,'cardSubs');
+  const sy=cy+sth,sh=ch-sth;
+  switch(game.cardSubTab){
+    case 0:renderSubCards(sy,sh);break;
+    case 1:renderSubSkills(sy,sh);break;
+    case 2:renderSubRunes(sy,sh);break;
+    case 3:renderSubEquipment(sy,sh);break;
   }
 }
-function drawDungeonIcon(id,color){
-  ctx.fillStyle=color;const s=14;
-  switch(id){
-    case 0:ctx.beginPath();ctx.arc(-3,-3,s*.5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.5;ctx.beginPath();ctx.arc(3,3,s*.5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;break;
-    case 1:ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s*.7,0);ctx.lineTo(0,s);ctx.lineTo(-s*.7,0);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.globalAlpha=.3;ctx.beginPath();ctx.moveTo(0,-s*.4);ctx.lineTo(s*.25,0);ctx.lineTo(0,s*.1);ctx.closePath();ctx.fill();ctx.globalAlpha=1;break;
-    case 2:ctx.beginPath();ctx.arc(0,-2,s*.7,0,Math.PI*2);ctx.fill();ctx.fillRect(-s*.35,s*.15,s*.7,s*.3);ctx.fillStyle='#000';ctx.beginPath();ctx.arc(-3,-3,2.5,0,Math.PI*2);ctx.arc(3,-3,2.5,0,Math.PI*2);ctx.fill();break;
+function tapTabCards(x,y){
+  switch(game.cardSubTab){
+    case 0:tapSubCards(x,y);break;
+    case 1:tapSubSkills(x,y);break;
+    case 2:tapSubRunes(x,y);break;
   }
 }
 
-// --- 던전: 결과 오버레이 ---
-function renderDungeonResultOverlay(cy,ch){
-  const r=game.dungeonResult;
+// --- 카드 서브탭: 카드 ---
+function renderSubCards(cy,ch){
+  drawText('카드 컬렉션',W/2,cy+ch*.02,'#fa0',Math.min(W*.035,18));
+  drawText('공격 x'+game.cardAtkMult.toFixed(2)+'  체력 x'+game.cardHpMult.toFixed(2)+'  식량 x'+game.cardFoodMult.toFixed(2),W/2,cy+ch*.08,'#aaa',Math.min(W*.016,10));
+  const cols=4,rows=3,gw=Math.min(W*.85,620),gh=ch*.50;
+  const gx=(W-gw)/2,gy=cy+ch*.13,cw=gw/cols-6,crh=gh/rows-6;
+  for(let i=0;i<CARD_DEFS.length;i++){
+    const c=CARD_DEFS[i],col=i%cols,row=Math.floor(i/cols);
+    const cx=gx+col*(cw+6),cry=gy+row*(crh+6),owned=game.cardInv[i]>0;
+    ctx.globalAlpha=owned?1:.35;ctx.fillStyle='#0a0a18';ctx.strokeStyle=RARITY_COLORS[c.rarity];ctx.lineWidth=owned?2:1;
+    if(owned){ctx.shadowBlur=5;ctx.shadowColor=RARITY_COLORS[c.rarity]}
+    roundRect(cx,cry,cw,crh,4);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+    ctx.save();ctx.translate(cx+cw/2,cry+crh*.2);drawCardIcon(c.type,RARITY_COLORS[c.rarity],crh*.12);ctx.restore();
+    drawText(c.name,cx+cw/2,cry+crh*.45,RARITY_COLORS[c.rarity],Math.min(cw*.12,9));
+    drawText(RARITY_NAMES[c.rarity],cx+cw/2,cry+crh*.62,'#666',Math.min(cw*.1,7));
+    drawText(c.desc,cx+cw/2,cry+crh*.78,'#aaa',Math.min(cw*.1,7));
+    if(owned)drawText('x'+game.cardInv[i],cx+cw-10,cry+8,'#fff',Math.min(cw*.12,9));
+    ctx.globalAlpha=1;
+  }
+  const btnY=cy+ch*.82,bw1=Math.min(W*.22,150),bh1=Math.min(ch*.1,34);
+  game._btns.pull1=drawBtn(W/2-bw1-8,btnY,bw1,bh1,'1회 뽑기 💎10','#1a1a0a','#fa0',game.gems>=10);
+  game._btns.pull10=drawBtn(W/2+8,btnY,bw1,bh1,'10회 뽑기 💎90','#1a1a0a','#fa0',game.gems>=90);
+}
+function drawCardIcon(type,color,sz){
+  ctx.fillStyle=color;const s=sz;
+  if(type==='atk'){ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s*.6,s*.3);ctx.lineTo(-s*.6,s*.3);ctx.closePath();ctx.fill();ctx.fillRect(-1,-s*.3,2,s*1.3)}
+  else if(type==='hp'){ctx.beginPath();ctx.moveTo(0,s*.6);ctx.bezierCurveTo(-s,0,-s,-s*.6,0,-s*.2);ctx.bezierCurveTo(s,-s*.6,s,0,0,s*.6);ctx.fill()}
+  else{ctx.fillRect(-s*.6,-s*.2,s*1.2,s*.4);ctx.fillRect(-s*.2,-s*.6,s*.4,s*1.2)}
+}
+function tapSubCards(x,y){
+  if(inBtn(game._btns.pull1,x,y)&&game.gems>=10){game.gems-=10;game.cardPullResult=pullCards(1,false);sfx(523,.15,'sine',.12);return}
+  if(inBtn(game._btns.pull10,x,y)&&game.gems>=90){game.gems-=90;game.cardPullResult=pullCards(10,false);sfx(523,.15,'sine',.12);return}
+}
+
+// --- 카드 뽑기 결과 오버레이 ---
+function renderCardPullOverlay(cy,ch){
   ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(0,0,W,H);
-  drawText('던전 클리어!',W/2,cy+ch*.12,'#0f8',Math.min(W*.04,22));
-  drawText(DUNGEON_DEFS[r.type].name,W/2,cy+ch*.22,DUNGEON_DEFS[r.type].color,Math.min(W*.03,16));
-  let ry=cy+ch*.35;
-  if(r.coins>0){drawText('💰 '+r.coins+' 코인',W/2,ry,'#fc0',15);ry+=28}
-  if(r.gems>0){drawText('💎 '+r.gems+' 보석',W/2,ry,'#0f8',15);ry+=28}
-  if(r.card>=0){const c=CARD_DEFS[r.card];
-    ctx.save();ctx.shadowBlur=8;ctx.shadowColor=RARITY_COLORS[c.rarity];
-    drawText('🃏 '+c.name+' ('+RARITY_NAMES[c.rarity]+')',W/2,ry,RARITY_COLORS[c.rarity],15);
-    ctx.shadowBlur=0;ctx.restore();ry+=28}
-  if(r.rune>=0){const rn=RUNE_DEFS[r.rune];
-    ctx.save();ctx.shadowBlur=8;ctx.shadowColor=rn.color;
-    drawText('💎 '+rn.name+' ('+RARITY_NAMES[rn.rarity]+')',W/2,ry,rn.color,15);
-    ctx.shadowBlur=0;ctx.restore()}
+  drawText('카드 획득!',W/2,cy+ch*.06,'#fa0',Math.min(W*.04,22));
+  const cards=game.cardPullResult,cols=Math.min(cards.length,5),rows=Math.ceil(cards.length/cols);
+  const cw=Math.min(80,(W*.7)/cols),crh=Math.min(85,ch*.4/rows);
+  const gw=cols*(cw+8)-8,gx=(W-gw)/2,gy=cy+ch*.14;
+  for(let i=0;i<cards.length;i++){
+    const c=cards[i],col=i%cols,row=Math.floor(i/cols);
+    const cx=gx+col*(cw+8),cry=gy+row*(crh+8);
+    ctx.fillStyle='#0a0a20';ctx.strokeStyle=RARITY_COLORS[c.rarity];ctx.lineWidth=2;
+    ctx.shadowBlur=10;ctx.shadowColor=RARITY_COLORS[c.rarity];
+    roundRect(cx,cry,cw,crh,6);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+    ctx.save();ctx.translate(cx+cw/2,cry+crh*.2);drawCardIcon(c.type,RARITY_COLORS[c.rarity],crh*.12);ctx.restore();
+    drawText(RARITY_NAMES[c.rarity],cx+cw/2,cry+crh*.42,RARITY_COLORS[c.rarity],8);
+    drawText(c.name,cx+cw/2,cry+crh*.6,RARITY_COLORS[c.rarity],Math.min(cw*.13,10));
+    drawText(c.desc,cx+cw/2,cry+crh*.8,'#ccc',Math.min(cw*.1,8));
+  }
   const bw2=Math.min(W*.2,120);
-  game._btns.dungeonOk=drawBtn(W/2-bw2/2,cy+ch*.78,bw2,35,'확인','#0a2a0a','#0ff');
+  game._btns.pullOk=drawBtn(W/2-bw2/2,cy+ch*.82,bw2,32,'확인','#0a2a0a','#0ff');
 }
 
-// --- 던전: 터치 ---
-function tapTabDungeon(x,y){
-  if(game.dungeonActive>=0)return;
-  for(let i=0;i<DUNGEON_DEFS.length;i++){
-    if(inBtn(game._btns.dungeonEnter[i],x,y)&&game.dungeonCD[i]<=Date.now()){
-      game.dungeonActive=i;game.dungeonTimer=0;sfx(400,.1,'square',.08);return}
+// --- 카드 서브탭: 스킬 ---
+function renderSubSkills(cy,ch){
+  drawText('스킬 강화',W/2,cy+ch*.03,'#ff4444',Math.min(W*.035,18));
+  const sc=SKILL_DEFS.length,rh=Math.min(ch*.18,50),gw=Math.min(W*.85,550);
+  const gx=(W-gw)/2,gy=cy+ch*.1;
+  game._btns.skillUp=[];
+  const icons=['⚔','🛡','⚡','🏰'];
+  for(let i=0;i<sc;i++){
+    const s=SKILL_DEFS[i],lv=game.skillLv[i],maxed=lv>=s.maxLv;
+    const ry=gy+i*(rh+6);
+    ctx.fillStyle='#0a0a18';ctx.strokeStyle=maxed?'#555':s.color;ctx.lineWidth=maxed?1:1.5;
+    roundRect(gx,ry,gw,rh,5);ctx.fill();ctx.stroke();
+    drawText(icons[i],gx+rh/2,ry+rh/2,'#fff',Math.min(rh*.4,18));
+    drawText(s.name,gx+rh+10,ry+rh*.3,s.color,Math.min(W*.02,12),'left');
+    const pct=Math.round(s.perLv*lv*100);
+    drawText(s.desc+' +'+pct+'%',gx+rh+10,ry+rh*.7,'#aaa',Math.min(W*.015,9),'left');
+    drawText('Lv.'+lv+'/'+s.maxLv,gx+gw*.55,ry+rh/2,'#fff',Math.min(W*.018,11));
+    if(!maxed){
+      const cost=skillCost(i),can=game.coins>=cost;
+      const bw=Math.min(gw*.22,100),bx=gx+gw-bw-8;
+      game._btns.skillUp[i]=drawBtn(bx,ry+(rh-28)/2,bw,28,'💰'+cost,'#0a1a0a','#0f8',can);
+    }else{drawText('MAX',gx+gw-40,ry+rh/2,'#fa0',11)}
+  }
+}
+function tapSubSkills(x,y){
+  if(!game._btns.skillUp)return;
+  for(let i=0;i<SKILL_DEFS.length;i++){
+    if(inBtn(game._btns.skillUp[i],x,y)&&game.skillLv[i]<SKILL_DEFS[i].maxLv){
+      const cost=skillCost(i);
+      if(game.coins>=cost){game.coins-=cost;game.skillLv[i]++;recalcStats();saveGame();sfx(523,.1,'sine',.1)}return}
+  }
+}
+
+// --- 카드 서브탭: 룬 ---
+function drawRuneHex(x,y,sz,color,rarity){
+  ctx.save();ctx.translate(x,y);const s=sz;
+  ctx.fillStyle=color;ctx.strokeStyle=color;ctx.lineWidth=1.5;
+  ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3-Math.PI/6;i===0?ctx.moveTo(Math.cos(a)*s,Math.sin(a)*s):ctx.lineTo(Math.cos(a)*s,Math.sin(a)*s)}ctx.closePath();
+  ctx.globalAlpha=.25;ctx.fill();ctx.globalAlpha=1;ctx.stroke();
+  if(rarity>=1){ctx.globalAlpha=.4;ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3-Math.PI/6;i===0?ctx.moveTo(Math.cos(a)*s*.5,Math.sin(a)*s*.5):ctx.lineTo(Math.cos(a)*s*.5,Math.sin(a)*s*.5)}ctx.closePath();ctx.fill();ctx.globalAlpha=1}
+  if(rarity>=2){ctx.shadowBlur=6;ctx.shadowColor=color;ctx.beginPath();ctx.arc(0,0,s*.2,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0}
+  ctx.restore();
+}
+function renderSubRunes(cy,ch){
+  drawText('룬 장착',W/2,cy+ch*.03,'#ffcc00',Math.min(W*.035,18));
+  // equipped slots
+  const slotSz=Math.min(ch*.22,55),slotGap=12;
+  const eqY=cy+ch*.1,eqGW=3*(slotSz+slotGap)-slotGap,eqX=(W-eqGW)/2;
+  game._btns.runeSlots=[];
+  drawText('장착 중',eqX-5,eqY+slotSz/2,'#888',9,'right');
+  for(let i=0;i<3;i++){
+    const sx=eqX+i*(slotSz+slotGap);
+    ctx.fillStyle='#0a0a18';ctx.strokeStyle='#444';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    roundRect(sx,eqY,slotSz,slotSz,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);
+    const rid=game.runeEquipped[i];
+    if(rid!=null){const r=RUNE_DEFS[rid];
+      ctx.strokeStyle=r.color;ctx.lineWidth=2;roundRect(sx,eqY,slotSz,slotSz,5);ctx.stroke();
+      drawRuneHex(sx+slotSz/2,eqY+slotSz*.35,slotSz*.25,r.color,r.rarity);
+      drawText(r.name,sx+slotSz/2,eqY+slotSz*.78,r.color,Math.min(slotSz*.16,8));
+    }else{drawText('+',sx+slotSz/2,eqY+slotSz/2,'#333',18)}
+    game._btns.runeSlots.push({x:sx,y:eqY,w:slotSz,h:slotSz});
+  }
+  // inventory
+  const invY=eqY+slotSz+15;
+  drawText('보유 룬',W/2,invY-5,'#888',9);
+  const cols=Math.min(RUNE_DEFS.length,5),rw=Math.min((W*.8)/cols-6,80),rrh=Math.min(ch*.35,70);
+  const igw=Math.min(cols*(rw+6)-6,W*.85),igx=(W-igw)/2;
+  game._btns.runeItems=[];
+  const rows2=Math.ceil(RUNE_DEFS.length/cols);
+  for(let i=0;i<RUNE_DEFS.length;i++){
+    const r=RUNE_DEFS[i],col=i%cols,row=Math.floor(i/cols);
+    const rx=igx+col*(rw+6),ry=invY+5+row*(rrh+4),owned=game.runeInv[i]>0;
+    ctx.globalAlpha=owned?1:.3;ctx.fillStyle='#0a0a18';ctx.strokeStyle=r.color;ctx.lineWidth=owned?1.5:1;
+    roundRect(rx,ry,rw,rrh,4);ctx.fill();ctx.stroke();
+    drawRuneHex(rx+rw/2,ry+rrh*.3,Math.min(rw*.18,12),r.color,r.rarity);
+    drawText(r.name,rx+rw/2,ry+rrh*.6,r.color,Math.min(rw*.12,8));
+    drawText(RARITY_NAMES[r.rarity],rx+rw/2,ry+rrh*.75,'#666',Math.min(rw*.1,7));
+    if(owned)drawText('x'+game.runeInv[i],rx+rw-8,ry+6,'#fff',8);
+    ctx.globalAlpha=1;
+    if(owned)game._btns.runeItems.push({x:rx,y:ry,w:rw,h:rrh,id:i});
+  }
+}
+function tapSubRunes(x,y){
+  if(game._btns.runeSlots)for(let i=0;i<3;i++){
+    if(inBtn(game._btns.runeSlots[i],x,y)&&game.runeEquipped[i]!=null){
+      game.runeInv[game.runeEquipped[i]]++;game.runeEquipped[i]=null;
+      recalcStats();saveGame();sfx(400,.08,'sine',.08);return}}
+  if(game._btns.runeItems)for(const b of game._btns.runeItems){
+    if(inBtn(b,x,y)&&game.runeInv[b.id]>0){
+      const slot=game.runeEquipped.indexOf(null);
+      if(slot>=0){game.runeInv[b.id]--;game.runeEquipped[slot]=b.id;recalcStats();saveGame();sfx(600,.08,'sine',.08)}return}}
+}
+
+// --- 카드 서브탭: 영웅(장비) ---
+function drawPilot(x,y,s){
+  ctx.save();ctx.translate(x,y);
+  ctx.fillStyle='#1a3a5a';ctx.beginPath();ctx.arc(0,-22*s,13*s,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#0ff';ctx.globalAlpha=.4;ctx.beginPath();ctx.arc(0,-22*s,9*s,-.3,Math.PI+.3,true);ctx.fill();ctx.globalAlpha=1;
+  ctx.fillStyle='#2a4a6a';ctx.fillRect(-11*s,-9*s,22*s,24*s);
+  ctx.fillRect(-17*s,-7*s,6*s,18*s);ctx.fillRect(11*s,-7*s,6*s,18*s);
+  ctx.fillRect(-9*s,15*s,7*s,12*s);ctx.fillRect(2*s,15*s,7*s,12*s);
+  ctx.fillStyle='#fa0';ctx.fillRect(-11*s,9*s,22*s,3*s);
+  ctx.restore();
+}
+function drawEquipIcon(type,x,y,sz){
+  ctx.save();ctx.translate(x,y);ctx.fillStyle='#556';ctx.strokeStyle='#556';const s=sz;
+  switch(type){
+    case'weapon':ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(0,s*.6);ctx.stroke();ctx.beginPath();ctx.moveTo(-s*.4,s*.15);ctx.lineTo(s*.4,s*.15);ctx.stroke();ctx.beginPath();ctx.moveTo(-s*.12,-s);ctx.lineTo(0,-s*1.15);ctx.lineTo(s*.12,-s);ctx.closePath();ctx.fill();break;
+    case'helmet':ctx.beginPath();ctx.arc(0,-s*.05,s*.55,Math.PI,0);ctx.lineTo(s*.55,s*.3);ctx.lineTo(-s*.55,s*.3);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(0,255,255,.2)';ctx.fillRect(-s*.35,s*.05,s*.7,s*.15);break;
+    case'armor':ctx.beginPath();ctx.moveTo(-s*.5,-s*.5);ctx.lineTo(s*.5,-s*.5);ctx.lineTo(s*.55,s*.5);ctx.lineTo(-s*.55,s*.5);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(255,255,255,.15)';ctx.fillRect(-s*.12,-s*.35,s*.24,s*.45);break;
+    case'shoes':ctx.fillRect(-s*.45,-s*.15,s*.3,s*.5);ctx.fillRect(s*.15,-s*.15,s*.3,s*.5);ctx.fillRect(-s*.45,s*.2,s*.45,s*.15);ctx.fillRect(s*.15,s*.2,s*.45,s*.15);break;
+    case'necklace':ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,-s*.15,s*.35,0,Math.PI);ctx.stroke();ctx.beginPath();ctx.moveTo(0,s*.2);ctx.lineTo(-s*.18,s*.45);ctx.lineTo(s*.18,s*.45);ctx.closePath();ctx.fill();break;
+    case'ring':ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,s*.05,s*.35,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(0,-s*.3,s*.12,0,Math.PI*2);ctx.fill();break;
+  }
+  ctx.restore();
+}
+function renderSubEquipment(cy,ch){
+  drawText('영웅 장비',W/2,cy+ch*.03,'#0ff',Math.min(W*.035,18));
+  const cx=W/2,my=cy+ch*.5;
+  drawPilot(cx,my,Math.min(ch*.012,1));
+  const slotSz=Math.min(ch*.2,48),gap=slotSz*.3;
+  const positions=[
+    {x:cx-slotSz*1.8,y:my-slotSz*1.1},{x:cx,y:my-slotSz*1.8},{x:cx+slotSz*1.8,y:my-slotSz*1.1},
+    {x:cx-slotSz*1.8,y:my+slotSz*.5},{x:cx,y:my+slotSz*1.2},{x:cx+slotSz*1.8,y:my+slotSz*.5},
+  ];
+  for(let i=0;i<6;i++){
+    const p=positions[i],eq=EQUIP_SLOTS[i];
+    ctx.fillStyle='#0a0a18';ctx.strokeStyle='#334';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    roundRect(p.x-slotSz/2,p.y-slotSz/2,slotSz,slotSz,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);
+    if(game.equipment[i]){
+      drawText('?',p.x,p.y,'#0ff',14);
+    }else{
+      drawEquipIcon(eq.id,p.x,p.y,slotSz*.25);
+    }
+    drawText(eq.name,p.x,p.y+slotSz/2+10,'#556',Math.min(slotSz*.2,9));
   }
 }
 
