@@ -156,7 +156,7 @@ let game={
   gameSpeed:1,
   pUnits:[],eUnits:[],projs:[],parts:[],
   pBaseHP:500,pBaseMax:500,eBaseHP:0,eBaseMax:0,
-  espTimer:2,bTime:0,
+  espTimer:2,bTime:0,battleCoins:0,
   unitCD:[0,0,0,0,0],
   // stats
   totalKills:0,highestPlanet:1,
@@ -406,7 +406,7 @@ function spawnEnemy(){
 }
 
 function startPlanet(){
-  game.battleState='FIGHTING';game.bTime=0;game.espTimer=2;
+  game.battleState='FIGHTING';game.bTime=0;game.espTimer=2;game.battleCoins=0;
   game.eBaseMax=enemyBaseHP();game.eBaseHP=game.eBaseMax;
   let baseHP=500+game.shopBought[1]*100+game.upgBase*50;
   baseHP=Math.floor(baseHP*game.baseHpMult);
@@ -504,7 +504,7 @@ function updUnits(units,enemies,dir,dt){
         else addPart((u.x+nearest.x)/2,(u.y+nearest.y)/2,rand(-1,1),rand(-1,1),'#fff',.15,4);
         sfx(400+rand(-50,50),.05,'square',.04);
         if(nearest.hp<=0){nearest.state='DIE';nearest.dieT=.3;explode(nearest.x,nearest.y,nearest.color,10);
-          if(nearest.isEnemy!==undefined){game.coins+=Math.floor(5+game.planetLv*2);game.totalKills++}}
+          if(nearest.isEnemy!==undefined){const cr=Math.floor(5+game.planetLv*2);game.coins+=cr;game.battleCoins+=cr;game.totalKills++}}
       }
     }else{
       u.state='MOVE';u.x+=u.spd*dir*60*dt;u.atkT=0;
@@ -685,42 +685,37 @@ function tapBattle(x,y){
   if(inBtn(game._btns.giveup,x,y)){game.resetReward=resetGems();game.showReset=true;return}
 }
 
-// --- 배틀 HUD (2행) ---
+// --- 배틀 HUD (레퍼런스 스타일) ---
 function renderBattleHUD(){
-  const hh=H*.08;
-  ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(0,0,W,hh);
-  ctx.strokeStyle='#151520';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,hh);ctx.lineTo(W,hh);ctx.stroke();
-  const r1=hh*.32,r2=hh*.72;
-  // row1: food + coins + gems
-  const fbw=W*.28;
-  drawBar(8,r1-4,fbw,9,game.food,game.maxFood,'#fa0');
-  drawText('🍖'+Math.floor(game.food)+'/'+game.maxFood,8+fbw/2,r1,'#fc0',9);
-  drawText('(+'+Math.round(game.foodRate*game.cardFoodMult)+'/s)',8+fbw+4,r1,'#a80',7);
-  drawText('💰 '+fmtNum(game.coins),W*.68,r1,'#fc0',11);
-  drawText('💎 '+game.gems,W*.9,r1,'#0f8',11);
-  // row2: planet + timeline + speed
-  const pl=curPlanetTheme();
-  ctx.save();ctx.shadowBlur=4;ctx.shadowColor=pl.surface;
-  drawText('Lv.'+game.planetLv+' '+pl.name,W*.22,r2,pl.surface,10);
-  ctx.shadowBlur=0;ctx.restore();
-  drawText('타임라인 '+game.timeline,W*.52,r2,'#888',9);
+  // row1: 💰coins | 전투 N | 💎gems
+  const h1=H*.035;
+  ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(0,0,W,h1);
+  const hy=h1/2;
+  drawText('💰 '+fmtNum(game.coins),W*.14,hy,'#fc0',13,'left');
+  drawText('전투 '+game.planetLv,W/2,hy,'#fff',15);
+  drawText('💎 '+game.gems,W*.88,hy,'#0f8',13);
+  // row2: 코인 수집
+  const iy=h1+6;
+  ctx.fillStyle='rgba(0,0,0,.45)';roundRect(8,iy,W*.42,20,10);ctx.fill();
+  drawText('코인 수집',28,iy+10,'#aaa',8,'left');
+  drawText('💰 '+fmtNum(game.battleCoins),W*.3,iy+10,'#fc0',10);
+  // row3: speed control
+  const sy=iy+24;
   const speedColors=['','#fff','#0f8','#fa0'];
-  const sbw=42,sbh=hh*.38,sbx=W-sbw-6,sby=r2-sbh/2;
-  game._btns.speed={x:sbx,y:sby,w:sbw,h:sbh};
-  ctx.fillStyle='#111';ctx.strokeStyle=speedColors[game.gameSpeed];ctx.lineWidth=1.5;
-  roundRect(sbx,sby,sbw,sbh,4);ctx.fill();ctx.stroke();
-  drawText('x'+game.gameSpeed,sbx+sbw/2,r2,speedColors[game.gameSpeed],11);
+  ctx.fillStyle='rgba(0,0,0,.45)';roundRect(8,sy,W*.3,20,10);ctx.fill();
+  drawText('🔒  x'+game.gameSpeed+'  ▶',8+W*.15,sy+10,speedColors[game.gameSpeed],10);
+  game._btns.speed={x:8,y:sy,w:W*.3,h:20};
 }
 
-// --- 배틀 유닛카드 ---
+// --- 배틀 유닛카드 (레퍼런스 스타일) ---
 function renderBattleUnitCards(){
-  const panelY=H*.68,panelH=H-panelY;
-  ctx.fillStyle='rgba(5,5,15,.85)';ctx.fillRect(0,panelY,W,panelH);
-  ctx.strokeStyle='#1a1a2a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,panelY);ctx.lineTo(W,panelY);ctx.stroke();
-  // unit cards
+  // panel at bottom
+  const panelH=H*.22,panelY=H-panelH;
+  ctx.fillStyle='rgba(5,5,12,.92)';ctx.fillRect(0,panelY,W,panelH);
+  // unit cards row
   const uc=UNIT_TYPES.length;
-  const gap=6,cw=Math.min((W-20)/uc-gap,75),ch=panelH*.52;
-  const gw=uc*(cw+gap)-gap,sx=(W-gw)/2,cy=panelY+8;
+  const gap=8,cw=Math.min((W-24)/uc-gap,72),ch=panelH*.55;
+  const gw=uc*(cw+gap)-gap,sx=(W-gw)/2,cy=panelY+10;
   game._btns.units=[];
   for(let i=0;i<uc;i++){
     const t=UNIT_TYPES[i],bx=sx+i*(cw+gap);
@@ -728,42 +723,43 @@ function renderBattleUnitCards(){
     const canAfford=game.food>=t.cost&&game.unitCD[i]<=0;
     const ok=unlocked&&canAfford&&game.battleState==='FIGHTING';
     ctx.globalAlpha=unlocked?(ok?1:.5):.25;
-    ctx.fillStyle=ok?'#0a1818':'#080810';ctx.strokeStyle=ok?t.color:(unlocked?'#333':'#1a1a1a');ctx.lineWidth=ok?2:1;
+    ctx.fillStyle=ok?'#111820':'#0a0a12';ctx.strokeStyle=ok?t.color:'#222';ctx.lineWidth=ok?2:1;
     if(ok){ctx.shadowBlur=4;ctx.shadowColor=t.color}
-    roundRect(bx,cy,cw,ch,6);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+    roundRect(bx,cy,cw,ch,8);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
     if(unlocked){
-      ctx.save();ctx.translate(bx+cw/2,cy+ch*.32);ctx.fillStyle=t.color;ctx.strokeStyle=t.color;ctx.lineWidth=1;
+      ctx.save();ctx.translate(bx+cw/2,cy+ch*.35);ctx.fillStyle=t.color;ctx.strokeStyle=t.color;ctx.lineWidth=1;
       const fn=SHAPES[t.shape];if(fn)fn(ctx,.35,Date.now()*.001);ctx.restore();
-      drawText(t.name,bx+cw/2,cy+ch*.65,t.color,Math.min(cw*.14,10));
-      drawText('🍖'+t.cost,bx+cw/2,cy+ch*.85,ok?'#fc0':'#666',Math.min(cw*.15,11));
+      drawText(t.name,bx+cw/2,cy+ch*.75,t.color,Math.min(cw*.14,9));
       if(game.unitCD[i]>0){
-        const cdRatio=game.unitCD[i]/t.cd;
-        ctx.fillStyle='rgba(0,0,0,.65)';roundRect(bx,cy,cw,ch,6);ctx.fill();
+        ctx.fillStyle='rgba(0,0,0,.65)';roundRect(bx,cy,cw,ch,8);ctx.fill();
         drawText(game.unitCD[i].toFixed(1)+'s',bx+cw/2,cy+ch*.45,'#fff',12);
       }
     }else{
-      drawText('🔒',bx+cw/2,cy+ch*.35,'#555',18);
-      drawText('Lv.'+t.unlock,bx+cw/2,cy+ch*.7,'#555',9);
+      drawText('🔒',bx+cw/2,cy+ch*.38,'#444',20);
+      drawText('Lv.'+t.unlock,bx+cw/2,cy+ch*.72,'#444',8);
     }
     ctx.globalAlpha=1;
     if(ok)game._btns.units.push({x:bx,y:cy,w:cw,h:ch,i});
   }
-  // bottom info row
-  const infoY=cy+ch+8,infoH=panelH-ch-20;
-  // food display
-  const foodPct=game.food/game.maxFood;
-  drawBar(12,infoY+2,W*.3,10,game.food,game.maxFood,'#fa0');
-  drawText('🍖'+Math.floor(game.food),12+W*.15,infoY+2+5,'#fc0',9);
-  // action buttons
+  // cost row below cards
+  for(let i=0;i<uc;i++){
+    const t=UNIT_TYPES[i],bx=sx+i*(cw+gap);
+    if(t.unlock<=game.planetLv)drawText('🍖'+t.cost,bx+cw/2,cy+ch+14,game.food>=t.cost?'#fc0':'#555',11);
+  }
+  // food display (bottom left)
+  const fy=H-panelH*.18;
+  const foodBarW=W*.18;
+  drawBar(10,fy-4,foodBarW,8,game.food,game.maxFood,'#fa0');
+  drawText('🍖'+Math.floor(game.food),14+foodBarW,fy,'#fc0',12,'left');
+  // action buttons (only when needed)
   if(game.battleState==='CLEARED'){
     const canEvo=game.coins>=evoCost();
-    const bw2=Math.min(W*.28,110),bh2=Math.min(infoH,32);
-    game._btns.evo=drawBtn(W*.38,infoY,bw2,bh2,'⬆ 진화 💰'+evoCost(),'#0a2a0a','#0f8',canEvo);
-    game._btns.homeBtn=drawBtn(W*.38+bw2+8,infoY,Math.min(W*.2,70),bh2,'🏠 홈','#0a0a2a','#0ff');
-  }else{
-    drawText('진화 💰'+evoCost(),W*.55,infoY+infoH/2,'#444',9);
-    const gbw=Math.min(W*.22,80),gbh=Math.min(infoH,30);
-    game._btns.giveup=drawBtn(W-gbw-10,infoY,gbw,gbh,'포기/리셋','#1a0808','#f44');
+    const bw2=Math.min(W*.3,120),bh2=30,aby=fy-8;
+    game._btns.evo=drawBtn(W/2-bw2-4,aby,bw2,bh2,'⬆ 진화 💰'+evoCost(),'#0a2a0a','#0f8',canEvo);
+    game._btns.homeBtn=drawBtn(W/2+4,aby,bw2,bh2,'🏠 홈으로','#0a0a2a','#0ff');
+  }else if(game.battleState==='FIGHTING'){
+    const gbw=Math.min(W*.2,78),gbh=26;
+    game._btns.giveup=drawBtn(W-gbw-10,fy-6,gbw,gbh,'포기/리셋','#1a0808','#f44');
   }
 }
 
