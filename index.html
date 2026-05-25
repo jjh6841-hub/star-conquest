@@ -45,27 +45,37 @@ const PLANET_THEMES=[
    enemies:[
     {name:'화염 벌레',hp:25,dmg:6,spd:2.5,range:25,atkSpd:1.2,color:'#ff4400',shape:'bug',size:.7,w:5},
     {name:'용암 골렘',hp:100,dmg:18,spd:.8,range:30,atkSpd:.5,color:'#ff6600',shape:'golem',size:1.3,w:2},
-    {name:'화산 비룡',hp:60,dmg:25,spd:1.5,range:50,atkSpd:.8,color:'#ff2200',shape:'dragon',size:1.1,w:1,isAir:true}]},
+    {name:'화산 비룡',hp:60,dmg:25,spd:1.5,range:50,atkSpd:.8,color:'#ff2200',shape:'dragon',size:1.1,w:1,isAir:true},
+    {name:'돌격 벌레',hp:15,dmg:4,spd:5,range:20,atkSpd:1.5,color:'#ffaa00',shape:'bug',size:.5,w:3,trait:'rusher'},
+    {name:'화염 분열체',hp:40,dmg:8,spd:2,range:25,atkSpd:1.0,color:'#ff8800',shape:'blob',size:.9,w:2,trait:'splitter'}]},
   {name:'크리오스',sub:'얼음 행성',bgTop:'#050515',bgBot:'#0a1a3a',ground:'#1a2a4a',surface:'#4488ff',
    enemies:[
     {name:'얼음 정령',hp:35,dmg:10,spd:3,range:25,atkSpd:1.0,color:'#88ccff',shape:'spirit',size:.8,w:5},
     {name:'프로스트 가드',hp:130,dmg:20,spd:.7,range:35,atkSpd:.6,color:'#4488ff',shape:'guard',size:1.2,w:2},
-    {name:'빙하 타이탄',hp:200,dmg:30,spd:.5,range:40,atkSpd:.4,color:'#2266ff',shape:'titan',size:1.5,w:1}]},
+    {name:'빙하 타이탄',hp:200,dmg:30,spd:.5,range:40,atkSpd:.4,color:'#2266ff',shape:'titan',size:1.5,w:1},
+    {name:'빙결 치유사',hp:50,dmg:8,spd:1.5,range:30,atkSpd:1.0,color:'#66ddff',shape:'spirit',size:.7,w:2,trait:'healer'},
+    {name:'얼음 방패병',hp:120,dmg:14,spd:.8,range:25,atkSpd:.7,color:'#aaeeff',shape:'guard',size:1.1,w:2,trait:'shield'}]},
   {name:'톡시아',sub:'독성 행성',bgTop:'#0a0515',bgBot:'#1a2a0a',ground:'#2a3a0a',surface:'#44ff00',
    enemies:[
     {name:'독충',hp:20,dmg:8,spd:3.5,range:20,atkSpd:1.5,color:'#44ff00',shape:'bug',size:.6,w:6},
     {name:'산성 슬라임',hp:90,dmg:15,spd:1.2,range:35,atkSpd:.8,color:'#88ff44',shape:'blob',size:1.1,w:3},
-    {name:'뮤턴트 킹',hp:180,dmg:35,spd:.6,range:45,atkSpd:.5,color:'#00ff44',shape:'king',size:1.4,w:1}]},
+    {name:'뮤턴트 킹',hp:180,dmg:35,spd:.6,range:45,atkSpd:.5,color:'#00ff44',shape:'king',size:1.4,w:1},
+    {name:'독성 돌격충',hp:12,dmg:6,spd:6,range:18,atkSpd:1.8,color:'#aaff00',shape:'bug',size:.4,w:3,trait:'rusher'},
+    {name:'독성 분열체',hp:50,dmg:12,spd:1.5,range:30,atkSpd:.9,color:'#66ff22',shape:'blob',size:.9,w:2,trait:'splitter'}]},
   {name:'네뷸라',sub:'성운 행성',bgTop:'#150520',bgBot:'#2a0a3a',ground:'#2a1a3a',surface:'#aa44ff',
    enemies:[
     {name:'성운 유령',hp:40,dmg:12,spd:3,range:30,atkSpd:1.3,color:'#cc66ff',shape:'spirit',size:.8,w:5},
     {name:'에너지 구체',hp:70,dmg:22,spd:2,range:60,atkSpd:1.0,color:'#aa44ff',shape:'orb',size:1.0,w:3},
-    {name:'차원 군주',hp:250,dmg:40,spd:.5,range:50,atkSpd:.4,color:'#8822ff',shape:'lord',size:1.5,w:1}]},
+    {name:'차원 군주',hp:250,dmg:40,spd:.5,range:50,atkSpd:.4,color:'#8822ff',shape:'lord',size:1.5,w:1},
+    {name:'성운 치유사',hp:55,dmg:10,spd:1.8,range:35,atkSpd:1.1,color:'#dd88ff',shape:'spirit',size:.7,w:2,trait:'healer'},
+    {name:'차원 방패',hp:140,dmg:18,spd:.7,range:30,atkSpd:.6,color:'#bb66ff',shape:'guard',size:1.2,w:2,trait:'shield'}]},
   {name:'다크론',sub:'암흑 행성',bgTop:'#050505',bgBot:'#1a0a0a',ground:'#1a0a0a',surface:'#ff0044',
    enemies:[
     {name:'그림자 병사',hp:50,dmg:15,spd:2.8,range:30,atkSpd:1.2,color:'#ff2244',shape:'shadow',size:.9,w:5},
     {name:'암흑 기사',hp:160,dmg:30,spd:1.0,range:35,atkSpd:.7,color:'#ff0044',shape:'knight',size:1.3,w:3},
-    {name:'심연의 군주',hp:350,dmg:50,spd:.4,range:55,atkSpd:.3,color:'#cc0033',shape:'lord',size:1.6,w:1}]},
+    {name:'심연의 군주',hp:350,dmg:50,spd:.4,range:55,atkSpd:.3,color:'#cc0033',shape:'lord',size:1.6,w:1},
+    {name:'암흑 돌격병',hp:30,dmg:12,spd:5.5,range:22,atkSpd:1.4,color:'#ff6666',shape:'shadow',size:.6,w:3,trait:'rusher'},
+    {name:'심연 분열체',hp:80,dmg:16,spd:1.2,range:28,atkSpd:.8,color:'#ff4466',shape:'blob',size:1.0,w:2,trait:'splitter'}]},
 ];
 
 const TAB_DEFS=[
@@ -149,6 +159,31 @@ const DUNGEON_DEFS=[
   {id:2,name:'보스 도전',desc:'보스 처치 + 카드 보상',color:'#ff4444',cd:1800,dur:5},
 ];
 
+const MISSION_POOL=[
+  {id:0,desc:'적 30마리 처치',type:'kills',target:30,reward:{coins:200}},
+  {id:1,desc:'적 100마리 처치',type:'kills',target:100,reward:{coins:500}},
+  {id:2,desc:'전투 3회 수행',type:'battles',target:3,reward:{coins:300}},
+  {id:3,desc:'전투 5회 수행',type:'battles',target:5,reward:{gems:5}},
+  {id:4,desc:'코인 500 획득',type:'earnCoins',target:500,reward:{gems:3}},
+  {id:5,desc:'코인 2000 획득',type:'earnCoins',target:2000,reward:{gems:8}},
+  {id:6,desc:'행성 진화 1회',type:'evolve',target:1,reward:{gems:5}},
+  {id:7,desc:'유닛 20마리 소환',type:'spawns',target:20,reward:{coins:300}},
+  {id:8,desc:'유닛 50마리 소환',type:'spawns',target:50,reward:{gems:5}},
+];
+
+const ACHIEV_DEFS=[
+  {id:0,name:'첫 발걸음',desc:'첫 전투 승리',type:'wins',target:1,reward:{coins:100}},
+  {id:1,name:'사냥꾼',desc:'적 100마리 처치',type:'totalKills',target:100,reward:{coins:300}},
+  {id:2,name:'학살자',desc:'적 1000마리 처치',type:'totalKills',target:1000,reward:{gems:10}},
+  {id:3,name:'정복자',desc:'행성 Lv.5 도달',type:'planet',target:5,reward:{gems:5}},
+  {id:4,name:'탐험가',desc:'행성 Lv.10 도달',type:'planet',target:10,reward:{gems:15}},
+  {id:5,name:'진화론자',desc:'첫 진화 수행',type:'tierEvo',target:1,reward:{gems:5}},
+  {id:6,name:'함대 사령관',desc:'티어 5 도달',type:'tier',target:5,reward:{gems:20}},
+  {id:7,name:'부자',desc:'코인 10000 보유',type:'coins',target:10000,reward:{gems:5}},
+  {id:8,name:'수집가',desc:'카드 6종 수집',type:'cards',target:6,reward:{gems:10}},
+  {id:9,name:'타임워커',desc:'타임라인 3 도달',type:'timeline',target:3,reward:{gems:15}},
+];
+
 const SHOP_DEFS=[
   {id:0,name:'식량 확장',desc:'최대 식량 +50',baseCost:200,currency:'coins',icon:'🍖',max:20},
   {id:1,name:'기지 강화',desc:'기지 체력 +100',baseCost:300,currency:'coins',icon:'🏰',max:20},
@@ -197,6 +232,13 @@ let game={
   dungeonCD:[0,0,0],dungeonActive:-1,dungeonTimer:0,dungeonResult:null,
   // shop
   shopBought:[0,0,0,0,0,0],
+  // missions
+  missions:null,missionDay:0,
+  missionStats:{kills:0,battles:0,earnCoins:0,evolve:0,spawns:0},
+  // achievements
+  achievements:[0,0,0,0,0,0,0,0,0,0],totalWins:0,
+  // overlays (not saved)
+  showMissions:false,showAchievements:false,showStatInfo:false,
   // misc
   stars:[],shake:0,_btns:{},soundOn:true,
   showReset:false,resetReward:0,
@@ -276,6 +318,80 @@ function updateDungeon(dt){
   }
 }
 
+// ===== MISSIONS =====
+function initMissions(){
+  const day=Math.floor(Date.now()/86400000);
+  if(game.missions&&game.missionDay===day)return;
+  game.missionDay=day;game.missionStats={kills:0,battles:0,earnCoins:0,evolve:0,spawns:0};
+  const pool=[...MISSION_POOL],picked=[];
+  for(let i=0;i<3&&pool.length>0;i++){const idx=Math.floor(Math.random()*pool.length);picked.push({id:pool[idx].id,progress:0,claimed:false});pool.splice(idx,1)}
+  game.missions=picked;saveGame();
+}
+function trackMission(type,amount){
+  if(!game.missions)return;
+  game.missionStats[type]=(game.missionStats[type]||0)+amount;
+  for(const m of game.missions){const def=MISSION_POOL.find(d=>d.id===m.id);if(def&&def.type===type)m.progress=game.missionStats[type]}
+}
+function claimMission(idx){
+  if(!game.missions||idx<0||idx>=game.missions.length)return;
+  const m=game.missions[idx],def=MISSION_POOL.find(d=>d.id===m.id);
+  if(!def||m.claimed||m.progress<def.target)return;
+  m.claimed=true;
+  if(def.reward.coins)game.coins+=def.reward.coins;
+  if(def.reward.gems)game.gems+=def.reward.gems;
+  saveGame();sfx(523,.15,'sine',.15);setTimeout(()=>sfx(784,.2,'sine',.15),150);
+}
+function missionNotifyCount(){
+  if(!game.missions)return 0;
+  let c=0;for(const m of game.missions){const def=MISSION_POOL.find(d=>d.id===m.id);if(def&&!m.claimed&&m.progress>=def.target)c++}return c;
+}
+
+// ===== ACHIEVEMENTS =====
+function checkAchievements(){
+  for(let i=0;i<ACHIEV_DEFS.length;i++){
+    if(game.achievements[i]!==0)continue;
+    const a=ACHIEV_DEFS[i];let met=false;
+    switch(a.type){
+      case'wins':met=game.totalWins>=a.target;break;
+      case'totalKills':met=game.totalKills>=a.target;break;
+      case'planet':met=game.highestPlanet>=a.target;break;
+      case'tier':met=game.upgTier>=a.target;break;
+      case'tierEvo':met=game.upgTier>=a.target;break;
+      case'coins':met=game.coins>=a.target;break;
+      case'cards':let cc=0;for(let j=0;j<game.cardInv.length;j++)if(game.cardInv[j]>0)cc++;met=cc>=a.target;break;
+      case'timeline':met=game.timeline>=a.target;break;
+    }
+    if(met)game.achievements[i]=1;
+  }
+}
+function claimAchievement(idx){
+  if(idx<0||idx>=ACHIEV_DEFS.length||game.achievements[idx]!==1)return;
+  game.achievements[idx]=2;
+  const r=ACHIEV_DEFS[idx].reward;
+  if(r.coins)game.coins+=r.coins;if(r.gems)game.gems+=r.gems;
+  saveGame();sfx(523,.15,'sine',.15);setTimeout(()=>sfx(784,.2,'sine',.15),150);
+}
+function achievNotifyCount(){let c=0;for(let i=0;i<game.achievements.length;i++)if(game.achievements[i]===1)c++;return c}
+
+// ===== STAT BREAKDOWN =====
+function getStatBreakdown(){
+  const res={atk:{total:1,card:0,skill:0,rune:0,unit:0},hp:{total:1,card:0,skill:0,rune:0,unit:0},baseHp:{total:1,skill:0}};
+  for(let i=0;i<CARD_DEFS.length;i++){const c=CARD_DEFS[i],n=game.cardInv[i];
+    if(c.type==='atk')res.atk.card+=n*c.val;else if(c.type==='hp')res.hp.card+=n*c.val}
+  for(let i=0;i<SKILL_DEFS.length;i++){const s=SKILL_DEFS[i],lv=game.skillLv[i];if(lv>0){
+    if(s.stat==='atk')res.atk.skill+=s.perLv*lv;else if(s.stat==='hp')res.hp.skill+=s.perLv*lv;
+    else if(s.stat==='baseHp')res.baseHp.skill+=s.perLv*lv}}
+  for(let i=0;i<3;i++){const rid=game.runeEquipped[i];if(rid!=null){const r=RUNE_DEFS[rid];
+    if(r.stat==='atk')res.atk.rune+=r.val;else if(r.stat==='hp')res.hp.rune+=r.val;
+    else if(r.stat==='all'){res.atk.rune+=r.val;res.hp.rune+=r.val;res.baseHp.skill+=r.val}}}
+  for(let i=0;i<3;i++){if(game.upgUnits[i]&&game.upgUnitLv[i]>0){const st=getTierStats(game.upgTier,i);
+    res.atk.unit+=st.atkPer*game.upgUnitLv[i];res.hp.unit+=st.hpPer*game.upgUnitLv[i]}}
+  res.atk.total=1+res.atk.card+res.atk.skill+res.atk.rune+res.atk.unit;
+  res.hp.total=1+res.hp.card+res.hp.skill+res.hp.rune+res.hp.unit;
+  res.baseHp.total=1+res.baseHp.skill;
+  return res;
+}
+
 // ===== STARS =====
 function initStars(){game.stars=[];for(let i=0;i<120;i++)game.stars.push({x:rand(0,W),y:rand(0,GY),sz:rand(.5,2.5),sp:rand(.1,.5),br:rand(.3,1),tw:rand(1,5)})}
 
@@ -309,6 +425,14 @@ const SHAPES={
 function drawUnit(u){
   const t=Date.now()*.001,hover=Math.sin(t*3+u.id*2)*2;
   ctx.save();ctx.translate(u.x,u.y+hover);
+  // shield trait aura
+  if(u.trait==='shield'&&u.state!=='DIE'){
+    ctx.globalAlpha=.15+Math.sin(t*4)*.08;ctx.fillStyle='#88ccff';
+    ctx.beginPath();ctx.arc(0,0,22*u.size,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}
+  // healer green pulse
+  if(u.trait==='healer'&&u.state!=='DIE'){
+    ctx.globalAlpha=.12+Math.sin(t*3)*.08;ctx.fillStyle='#44ff44';
+    ctx.beginPath();ctx.arc(0,0,18*u.size,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}
   if(u.isEnemy)ctx.scale(-1,1);
   ctx.shadowBlur=8;ctx.shadowColor=u.color;ctx.fillStyle=u.color;ctx.strokeStyle=u.color;ctx.lineWidth=2;
   if(u.state==='ATTACK')ctx.globalAlpha=.6+Math.sin(t*15)*.4;
@@ -398,13 +522,18 @@ function drawBg(pl){
 function mkUnit(def,isEnemy,x){
   const gy=GY,by=def.isAir?gy-60:gy-15;
   const es=isEnemy?enemyScale():1,ts=isEnemy?timelineScale():1;
-  return{id:uid++,x,y:by-(def.size||1)*10+rand(-3,3),isEnemy,
+  let hpM=1,dmgM=1,spdM=1,sizeM=1,trait=def.trait||null;
+  if(trait==='rusher'){spdM=2;hpM=.5}
+  else if(trait==='tank'){hpM=2;spdM=.5;sizeM=1.3}
+  else if(trait==='shield'){}
+  const baseHp=Math.floor(def.hp*es*ts*(isEnemy?1:game.cardHpMult)*hpM);
+  return{id:uid++,x,y:by-(def.size||1)*sizeM*10+rand(-3,3),isEnemy,
     shape:def.shape||def.id,name:def.name,tierType:def.tierType,
-    hp:Math.floor(def.hp*es*ts*(isEnemy?1:game.cardHpMult)),
-    maxHp:Math.floor(def.hp*es*ts*(isEnemy?1:game.cardHpMult)),
-    dmg:Math.floor(def.dmg*es*ts*(isEnemy?1:game.cardAtkMult)),
-    spd:def.spd,range:def.range,atkSpd:def.atkSpd,color:def.color,
-    size:def.size||1,isAir:def.isAir||false,state:'MOVE',atkT:0,dieT:0}
+    hp:baseHp,maxHp:baseHp,
+    dmg:Math.floor(def.dmg*es*ts*(isEnemy?1:game.cardAtkMult)*dmgM),
+    spd:def.spd*spdM,range:def.range,atkSpd:def.atkSpd,color:def.color,
+    size:(def.size||1)*sizeM,isAir:def.isAir||false,state:'MOVE',atkT:0,dieT:0,
+    trait,healT:0}
 }
 function spawnUnit(i){
   const units=getPlayerUnits();
@@ -412,10 +541,11 @@ function spawnUnit(i){
   if(game.food<t.cost||game.unitCD[i]>0||game.pUnits.length>=30||game.battleState!=='FIGHTING')return;
   game.food-=t.cost;game.unitCD[i]=t.cd;
   game.pUnits.push(mkUnit(t,false,W*.15));sfx(800,.08,'square',.1);
+  trackMission('spawns',1);
 }
 function spawnEnemy(){
   const pl=curPlanetTheme();
-  const avail=pl.enemies.filter((_,i)=>i===0||i===1&&game.bTime>8||i===2&&game.bTime>20);
+  const avail=pl.enemies.filter((_,i)=>i===0||i===1&&game.bTime>8||i===2&&game.bTime>20||i===3&&game.bTime>30||i===4&&game.bTime>45);
   let tw=0;for(const e of avail)tw+=e.w;
   let r=rand(0,tw),sel=avail[0];
   for(const e of avail){r-=e.w;if(r<=0){sel=e;break}}
@@ -429,6 +559,7 @@ function startPlanet(){
   baseHP=Math.floor(baseHP*game.baseHpMult);
   game.pBaseMax=baseHP;game.pBaseHP=game.pBaseMax;
   recalcStats();
+  trackMission('battles',1);
 }
 
 function evolve(){
@@ -438,6 +569,7 @@ function evolve(){
   if(game.planetLv>game.highestPlanet)game.highestPlanet=game.planetLv;
   game.eUnits=[];game.projs=[];
   startPlanet();
+  trackMission('evolve',1);
   sfx(523,.15,'sine',.15);setTimeout(()=>sfx(784,.2,'sine',.15),150);
   saveGame();
 }
@@ -496,9 +628,9 @@ function updateBattle(dt){
   game.eUnits=game.eUnits.filter(u=>u.state!=='DEAD');
   // win
   if(game.eBaseHP<=0){
-    game.battleState='CLEARED';game.eUnits=[];
+    game.battleState='CLEARED';game.eUnits=[];game.totalWins++;
     sfx(523,.15,'sine',.15);setTimeout(()=>sfx(659,.15,'sine',.15),150);setTimeout(()=>sfx(784,.3,'sine',.15),300);
-    saveGame();
+    checkAchievements();saveGame();
   }
   // lose
   if(game.pBaseHP<=0){
@@ -510,18 +642,41 @@ function updateBattle(dt){
 function hasTarget(u,enemies){for(const e of enemies)if(e.state!=='DIE'&&Math.abs(u.x-e.x)<=u.range)return true;return false}
 function updUnits(units,enemies,dir,dt){
   for(const u of units){
-    if(u.state==='DIE'){u.dieT-=dt;if(u.dieT<=0)u.state='DEAD';continue}
+    if(u.state==='DIE'){u.dieT-=dt;if(u.dieT<=0){
+      // splitter: spawn 2 mini copies on death
+      if(u.trait==='splitter'&&u.isEnemy&&!u._split){
+        u._split=true;
+        for(let s=0;s<2;s++){const mini={id:uid++,x:u.x+rand(-15,15),y:u.y+rand(-5,5),isEnemy:true,
+          shape:u.shape,name:u.name,tierType:u.tierType,
+          hp:Math.floor(u.maxHp*.3),maxHp:Math.floor(u.maxHp*.3),
+          dmg:Math.floor(u.dmg*.3),spd:u.spd*1.2,range:u.range,atkSpd:u.atkSpd,
+          color:u.color,size:u.size*.5,isAir:u.isAir,state:'MOVE',atkT:0,dieT:0,trait:null,healT:0};
+          game.eUnits.push(mini)}
+      }
+      u.state='DEAD'}continue}
+    // healer trait: heal nearby enemies
+    if(u.trait==='healer'&&u.isEnemy){
+      u.healT=(u.healT||0)+dt;
+      if(u.healT>=2){u.healT=0;
+        for(const e of units){if(e!==u&&e.state!=='DIE'&&e.state!=='DEAD'&&Math.abs(e.x-u.x)<80){
+          e.hp=Math.min(e.maxHp,e.hp+Math.floor(e.maxHp*.05));
+          addPart(e.x,e.y-10,0,-1,'#44ff44',.4,3)}}
+      }
+    }
     let nearest=null,nd=Infinity;
     for(const e of enemies){if(e.state==='DIE')continue;const d=Math.abs(u.x-e.x);if(d<nd){nd=d;nearest=e}}
     if(nearest&&nd<=u.range){
       u.state='ATTACK';u.atkT-=dt;
       if(u.atkT<=0){
-        nearest.hp-=u.dmg;u.atkT=1/u.atkSpd;
+        let dmg=u.dmg;
+        if(nearest.trait==='shield')dmg=Math.floor(dmg*.5);
+        nearest.hp-=dmg;u.atkT=1/u.atkSpd;
         if(u.range>50)addProj(u.x,u.y,nearest.x,nearest.y,u.color);
         else addPart((u.x+nearest.x)/2,(u.y+nearest.y)/2,rand(-1,1),rand(-1,1),'#fff',.15,4);
         sfx(400+rand(-50,50),.05,'square',.04);
         if(nearest.hp<=0){nearest.state='DIE';nearest.dieT=.3;explode(nearest.x,nearest.y,nearest.color,10);
-          if(nearest.isEnemy!==undefined){const cr=Math.floor(5+game.planetLv*2);game.coins+=cr;game.battleCoins+=cr;game.totalKills++}}
+          if(nearest.isEnemy!==undefined){const cr=Math.floor(5+game.planetLv*2);game.coins+=cr;game.battleCoins+=cr;game.totalKills++;
+            trackMission('kills',1);trackMission('earnCoins',cr)}}
       }
     }else{
       u.state='MOVE';u.x+=u.spd*dir*60*dt;u.atkT=0;
@@ -602,6 +757,9 @@ function renderHome(){
   renderTabBar();
   if(game.cardPullResult)renderCardPullOverlay(cy,ch);
   if(game.dungeonResult)renderDungeonResultOverlay(cy,ch);
+  if(game.showMissions)renderMissionOverlay();
+  if(game.showAchievements)renderAchievementOverlay();
+  if(game.showStatInfo)renderStatInfoOverlay();
 }
 function renderHomeHUD(){
   ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(0,0,W,H*HUD_H);
@@ -615,6 +773,13 @@ function renderHomeHUD(){
   drawText('타임라인 '+game.timeline,W*.85,hy,'#888',9);
 }
 function tapHome(x,y){
+  if(game.showStatInfo){if(inBtn(game._btns.statInfoClose,x,y)){game.showStatInfo=false;sfx(800,.04,'sine',.08)}return}
+  if(game.showMissions){
+    if(game._btns.missionClaim)for(let i=0;i<game._btns.missionClaim.length;i++){if(inBtn(game._btns.missionClaim[i],x,y)){claimMission(i);return}}
+    if(inBtn(game._btns.missionClose,x,y)){game.showMissions=false;sfx(800,.04,'sine',.08)}return}
+  if(game.showAchievements){
+    if(game._btns.achievClaim)for(let i=0;i<game._btns.achievClaim.length;i++){if(inBtn(game._btns.achievClaim[i],x,y)){claimAchievement(i);return}}
+    if(inBtn(game._btns.achievClose,x,y)){game.showAchievements=false;sfx(800,.04,'sine',.08)}return}
   if(game.cardPullResult){if(inBtn(game._btns.pullOk,x,y)){game.cardPullResult=null;sfx(800,.04,'sine',.08)}return}
   if(game.dungeonResult){if(inBtn(game._btns.dungeonOk,x,y)){game.dungeonResult=null;sfx(800,.04,'sine',.08)}return}
   if(game._btns.tabs)for(const b of game._btns.tabs)if(inBtn(b,x,y)){
@@ -660,6 +825,13 @@ function renderTabBattleHome(cy,ch){
   ctx.shadowBlur=0;ctx.restore();
   drawText('행성 레벨 '+game.planetLv,W/2,cy+ch*.7,'#aaa',Math.min(W*.025,14));
   drawText('타임라인 '+game.timeline,W/2,cy+ch*.77,'#666',Math.min(W*.02,12));
+  // mission & achievement buttons
+  const ibsz=36;
+  const mnc=missionNotifyCount(),anc=achievNotifyCount();
+  game._btns.missionBtn=drawBtn(14,cy+ch*.03,ibsz,ibsz,'📋','#0a1a2a','#fa0');
+  if(mnc>0){ctx.fillStyle='#f44';ctx.beginPath();ctx.arc(14+ibsz-4,cy+ch*.03+4,8,0,Math.PI*2);ctx.fill();drawText(mnc,14+ibsz-4,cy+ch*.03+4,'#fff',9)}
+  game._btns.achievBtn=drawBtn(14+ibsz+8,cy+ch*.03,ibsz,ibsz,'🏆','#0a1a2a','#0f8');
+  if(anc>0){ctx.fillStyle='#f44';ctx.beginPath();ctx.arc(14+ibsz*2+4,cy+ch*.03+4,8,0,Math.PI*2);ctx.fill();drawText(anc,14+ibsz*2+4,cy+ch*.03+4,'#fff',9)}
   const bw=Math.min(W*.3,200),bh=45,bx=W/2-bw/2,by=cy+ch*.85;
   const pulse=1+Math.sin(t*3)*.04;
   ctx.save();ctx.translate(W/2,by+bh/2);ctx.scale(pulse,pulse);ctx.translate(-W/2,-(by+bh/2));
@@ -667,6 +839,8 @@ function renderTabBattleHome(cy,ch){
   ctx.restore();
 }
 function tapTabBattleHome(x,y){
+  if(inBtn(game._btns.missionBtn,x,y)){game.showMissions=!game.showMissions;game.showAchievements=false;sfx(800,.04,'sine',.08);return}
+  if(inBtn(game._btns.achievBtn,x,y)){game.showAchievements=!game.showAchievements;game.showMissions=false;sfx(800,.04,'sine',.08);return}
   if(inBtn(game._btns.startBattle,x,y)){
     game.screen='BATTLE';startPlanet();sfx(1000,.05,'sine',.1);
   }
@@ -956,6 +1130,7 @@ function drawTierShip(type,tier,x,y,sz){
 function renderSubUpgrade(cy,ch){
   const tier=game.upgTier,phase=Math.min(Math.floor(tier/5),5);
   drawText('Tier '+(tier+1)+'  공격 x'+game.cardAtkMult.toFixed(2)+'  체력 x'+game.cardHpMult.toFixed(2),W/2,cy+ch*.03,'#aaa',Math.min(W*.016,10));
+  game._btns.statInfoBtn=drawBtn(W-42,cy+ch*.01,30,22,'ℹ','#0a0a2a','#0ff');
   const uc=3,cw=Math.min((W*.75)/uc-10,140),crh=ch*.52;
   const gw=uc*(cw+10)-10,gx=(W-gw)/2,gy=cy+ch*.08;
   game._btns.upgBuy=[];game._btns.upgLvUp=[];
@@ -1000,6 +1175,7 @@ function renderSubUpgrade(cy,ch){
   game._btns.upgBaseBtn=drawBtn(bx+bw-Math.min(bw*.28,110)-6,by2+(bh-24)/2,Math.min(bw*.28,110),24,'💰'+bc,'#0a1a0a','#0f8',bcan);
 }
 function tapSubUpgrade(x,y){
+  if(inBtn(game._btns.statInfoBtn,x,y)){game.showStatInfo=!game.showStatInfo;sfx(800,.04,'sine',.08);return}
   const tier=game.upgTier;
   for(let i=0;i<3;i++){
     if(!game.upgUnits[i]&&inBtn(game._btns.upgBuy[i],x,y)){
@@ -1318,13 +1494,93 @@ function renderTabShop(cy,ch){
   drawText('특별한 아이템이 곧 추가됩니다',W/2,cy+ch*.68,'#444',Math.min(W*.02,11));
 }
 
+// ===== OVERLAYS: MISSIONS / ACHIEVEMENTS / STAT INFO =====
+function renderMissionOverlay(){
+  ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(0,0,W,H);
+  const pw=Math.min(W*.85,380),ph=Math.min(H*.55,320);
+  const px=W/2-pw/2,py=H/2-ph/2;
+  ctx.fillStyle='#0a0a18';ctx.strokeStyle='#fa0';ctx.lineWidth=2;
+  ctx.shadowBlur=12;ctx.shadowColor='#fa0';roundRect(px,py,pw,ph,10);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+  drawText('📋 일일 임무',W/2,py+24,'#fa0',18);
+  ctx.strokeStyle='#333';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+15,py+40);ctx.lineTo(px+pw-15,py+40);ctx.stroke();
+  game._btns.missionClaim=[];
+  if(!game.missions||game.missions.length===0){drawText('임무 없음',W/2,py+ph/2,'#666',14);return}
+  for(let i=0;i<game.missions.length;i++){
+    const m=game.missions[i],def=MISSION_POOL.find(d=>d.id===m.id);if(!def)continue;
+    const ry=py+55+i*72;
+    ctx.fillStyle='#111';roundRect(px+12,ry,pw-24,62,6);ctx.fill();
+    drawText(def.desc,px+20,ry+16,'#ddd',13,'left');
+    const pct=Math.min(m.progress,def.target);
+    drawBar(px+20,ry+30,pw*.4,8,pct,def.target,'#fa0');
+    drawText(pct+'/'+def.target,px+20+pw*.42,ry+34,'#aaa',10,'left');
+    const rw=def.reward.coins?'💰'+def.reward.coins:'💎'+def.reward.gems;
+    drawText(rw,px+pw*.7,ry+16,'#fc0',11);
+    if(m.claimed){drawText('완료 ✓',px+pw-40,ry+44,'#0f8',12)}
+    else if(m.progress>=def.target){game._btns.missionClaim[i]=drawBtn(px+pw-100,ry+32,80,24,'보상 받기','#0a2a0a','#0f8')}
+    else{drawText('미완료',px+pw-50,ry+44,'#666',11)}
+  }
+  const bw2=Math.min(pw*.3,100);
+  game._btns.missionClose=drawBtn(W/2-bw2/2,py+ph-40,bw2,30,'닫기','#1a0a0a','#888');
+}
+function renderAchievementOverlay(){
+  ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(0,0,W,H);
+  const pw=Math.min(W*.88,400),ph=Math.min(H*.7,440);
+  const px=W/2-pw/2,py=H/2-ph/2;
+  ctx.fillStyle='#0a0a18';ctx.strokeStyle='#0f8';ctx.lineWidth=2;
+  ctx.shadowBlur=12;ctx.shadowColor='#0f8';roundRect(px,py,pw,ph,10);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+  drawText('🏆 업적',W/2,py+24,'#0f8',18);
+  ctx.strokeStyle='#333';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+15,py+40);ctx.lineTo(px+pw-15,py+40);ctx.stroke();
+  game._btns.achievClaim=[];
+  const rh=36,startY=py+50;
+  for(let i=0;i<ACHIEV_DEFS.length;i++){
+    const a=ACHIEV_DEFS[i],st=game.achievements[i];
+    const ry=startY+i*(rh+3);
+    if(ry+rh>py+ph-45)break;
+    ctx.fillStyle=st===2?'#0a1a0a':st===1?'#1a1a0a':'#080810';
+    roundRect(px+10,ry,pw-20,rh,4);ctx.fill();
+    const col=st===2?'#0f8':st===1?'#fa0':'#555';
+    drawText(a.name,px+22,ry+rh*.35,col,11,'left');
+    drawText(a.desc,px+22,ry+rh*.72,'#888',9,'left');
+    const rw=a.reward.coins?'💰'+a.reward.coins:'💎'+a.reward.gems;
+    drawText(rw,px+pw*.65,ry+rh/2,'#fc0',10);
+    if(st===2){drawText('✓',px+pw-28,ry+rh/2,'#0f8',14)}
+    else if(st===1){game._btns.achievClaim[i]=drawBtn(px+pw-78,ry+4,60,rh-8,'받기','#0a2a0a','#0f8')}
+    else{drawText('🔒',px+pw-28,ry+rh/2,'#444',12)}
+  }
+  const bw2=Math.min(pw*.3,100);
+  game._btns.achievClose=drawBtn(W/2-bw2/2,py+ph-40,bw2,30,'닫기','#1a0a0a','#888');
+}
+function renderStatInfoOverlay(){
+  ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(0,0,W,H);
+  const pw=Math.min(W*.8,360),ph=Math.min(H*.55,320);
+  const px=W/2-pw/2,py=H/2-ph/2;
+  ctx.fillStyle='#0a0a18';ctx.strokeStyle='#0ff';ctx.lineWidth=2;
+  ctx.shadowBlur=12;ctx.shadowColor='#0ff';roundRect(px,py,pw,ph,10);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+  drawText('스탯 상세 정보',W/2,py+22,'#0ff',16);
+  const b=getStatBreakdown();let ry=py+48;
+  const lx=px+20;
+  function drawStat(icon,name,total,parts,color){
+    drawText(icon+' '+name+' 배율: x'+total.toFixed(2),lx,ry,color,13,'left');ry+=20;
+    for(const[k,v]of Object.entries(parts)){
+      if(v>0){drawText('  '+k+': +'+Math.round(v*100)+'%',lx+14,ry,'#888',10,'left');ry+=16}}
+    ry+=8;
+  }
+  drawStat('⚔','공격력',b.atk.total,{카드:b.atk.card,스킬:b.atk.skill,룬:b.atk.rune,'업그레이드 유닛':b.atk.unit},'#ff4444');
+  drawStat('❤','체력',b.hp.total,{카드:b.hp.card,스킬:b.hp.skill,룬:b.hp.rune,'업그레이드 유닛':b.hp.unit},'#44ff88');
+  drawStat('🏰','기지 체력',b.baseHp.total,{스킬:b.baseHp.skill},'#4488ff');
+  const bw2=Math.min(pw*.3,100);
+  game._btns.statInfoClose=drawBtn(W/2-bw2/2,py+ph-40,bw2,30,'닫기','#1a0a0a','#888');
+}
+
 // ===== SAVE/LOAD =====
 function saveGame(){try{localStorage.setItem('starConquest2',JSON.stringify({
   g:game.gems,co:game.coins,tl:game.timeline,hp:game.highestPlanet,
   ci:game.cardInv,dc:game.dungeonCD,sb:game.shopBought,snd:game.soundOn,
   sl:game.skillLv,ri:game.runeInv,re:game.runeEquipped,
   uu:game.upgUnits,ul:game.upgUnitLv,uf:game.upgFood,ub:game.upgBase,
-  ut:game.upgTier,eq:game.equipment,tk:game.totalKills
+  ut:game.upgTier,eq:game.equipment,tk:game.totalKills,
+  ms:game.missions,md:game.missionDay,mt:game.missionStats,
+  ac:game.achievements,tw:game.totalWins
 }))}catch(e){}}
 function loadGame(){try{const d=JSON.parse(localStorage.getItem('starConquest2'));if(d){
   game.gems=d.g||0;game.coins=d.co||0;game.timeline=d.tl||1;game.highestPlanet=d.hp||1;
@@ -1342,6 +1598,9 @@ function loadGame(){try{const d=JSON.parse(localStorage.getItem('starConquest2')
   if(d.ut!==undefined)game.upgTier=d.ut;
   if(d.eq)game.equipment=d.eq;
   if(d.tk!==undefined)game.totalKills=d.tk;
+  if(d.ms)game.missions=d.ms;if(d.md!==undefined)game.missionDay=d.md;
+  if(d.mt)game.missionStats=d.mt;
+  if(d.ac)game.achievements=d.ac;if(d.tw!==undefined)game.totalWins=d.tw;
   recalcStats();
 }}catch(e){}}
 
@@ -1366,13 +1625,14 @@ function loop(ts){
   ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
   if(game.screen==='BATTLE'&&!game.showReset)updateBattle(dt);
   if(game.screen==='HOME'&&game.dungeonActive>=0)updateDungeon(dt);
+  if(game.screen==='HOME'){initMissions();checkAchievements()}
   if(game.screen==='HOME')renderHome();
   else renderBattle();
   requestAnimationFrame(loop);
 }
 
 // ===== INIT =====
-resize();loadGame();requestAnimationFrame(loop);
+resize();loadGame();initMissions();checkAchievements();requestAnimationFrame(loop);
 </script>
 </body>
 </html>
