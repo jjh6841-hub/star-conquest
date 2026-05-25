@@ -101,11 +101,15 @@ const EQUIP_SLOTS=[
   {id:'weapon',name:'무기'},{id:'helmet',name:'투구'},{id:'armor',name:'갑옷'},
   {id:'shoes',name:'신발'},{id:'necklace',name:'목걸이'},{id:'ring',name:'반지'},
 ];
-const UPG_UNITS=[
-  {id:0,name:'정찰선',desc:'기본 전투력 강화',cost:0,atkPer:.02,hpPer:.01,color:'#00ffcc'},
-  {id:1,name:'순양함',desc:'고급 전투 지원',cost:1200,atkPer:.03,hpPer:.02,color:'#ff8800'},
-  {id:2,name:'기함',desc:'전면 전투력 강화',cost:3200,atkPer:.05,hpPer:.03,color:'#ff00ff'},
+const TIER_NAMES=[
+  ['돌격선','어설트','블레이드','세이버','리퍼','슬래셔'],
+  ['포격선','캐논','스나이퍼','아처','헌터','레일건'],
+  ['중장선','가디언','포트리스','타이탄','벙커','레비아탄'],
 ];
+function getTierColor(tier,type){const h=([170,35,270][type]+tier*8)%360;return'hsl('+h+','+(75+Math.min(tier,20))+'%,'+(48+Math.floor(tier/6)*3)+'%)'}
+function getTierName(tier,type){const p=Math.min(Math.floor(tier/5),5),sub=tier%5;return sub>0?TIER_NAMES[type][p]+' Mk.'+(sub+1):TIER_NAMES[type][p]}
+function getTierStats(tier,type){const s=1+tier*.15;return{atkPer:[.02,.01,.015][type]*s,hpPer:[.01,.02,.025][type]*s,cost:type===0?0:Math.floor([0,800,2000][type]*Math.pow(1.1,tier))}}
+function getTierEvoCost(tier){return Math.floor(500*Math.pow(1.2,tier))}
 const SKILL_DEFS=[
   {id:0,name:'공격 강화',desc:'전 유닛 공격력',stat:'atk',perLv:.03,baseCost:50,color:'#ff4444',maxLv:20},
   {id:1,name:'방어 강화',desc:'전 유닛 체력',stat:'hp',perLv:.03,baseCost:50,color:'#44ff88',maxLv:20},
@@ -122,13 +126,6 @@ const RUNE_DEFS=[
   {id:6,name:'파멸의 룬',desc:'공격력 +15%',stat:'atk',val:.15,rarity:2,color:'#ff2222'},
   {id:7,name:'불멸의 룬',desc:'체력 +15%',stat:'hp',val:.15,rarity:2,color:'#22ff66'},
   {id:8,name:'오메가 룬',desc:'전체 +10%',stat:'all',val:.10,rarity:3,color:'#ffcc00'},
-];
-const EVO_DEFS=[
-  {id:0,name:'정찰 드론',unit:'scout',maxLv:5,atkPer:.1,hpPer:.08,baseCost:100,color:'#00ffff'},
-  {id:1,name:'보병 로봇',unit:'infantry',maxLv:5,atkPer:.1,hpPer:.1,baseCost:150,color:'#00ff88'},
-  {id:2,name:'전투기',unit:'fighter',maxLv:5,atkPer:.12,hpPer:.08,baseCost:200,color:'#ff00ff',unlock:3},
-  {id:3,name:'중장갑 메카',unit:'heavy',maxLv:5,atkPer:.1,hpPer:.15,baseCost:250,color:'#ff8800',unlock:5},
-  {id:4,name:'포격 전차',unit:'artillery',maxLv:5,atkPer:.15,hpPer:.1,baseCost:300,color:'#ffff00',unlock:7},
 ];
 
 const DUNGEON_DEFS=[
@@ -179,8 +176,8 @@ let game={
   // upgrade
   upgUnits:[true,false,false],upgUnitLv:[1,0,0],
   upgFood:0,upgBase:0,
-  // evolution
-  evoLv:[0,0,0,0,0],
+  // evolution tier
+  upgTier:0,
   // dungeons
   dungeonCD:[0,0,0],dungeonActive:-1,dungeonTimer:0,dungeonResult:null,
   // shop
@@ -213,8 +210,8 @@ function recalcStats(){
   for(let i=0;i<3;i++){const rid=game.runeEquipped[i];if(rid!=null){const r=RUNE_DEFS[rid];
     if(r.stat==='atk')am+=r.val;else if(r.stat==='hp')hm+=r.val;else if(r.stat==='food')fm+=r.val;
     else if(r.stat==='all'){am+=r.val;hm+=r.val;fm+=r.val;bm+=r.val}}}
-  for(let i=0;i<UPG_UNITS.length;i++){if(game.upgUnits[i]&&game.upgUnitLv[i]>0){
-    am+=UPG_UNITS[i].atkPer*game.upgUnitLv[i];hm+=UPG_UNITS[i].hpPer*game.upgUnitLv[i]}}
+  for(let i=0;i<3;i++){if(game.upgUnits[i]&&game.upgUnitLv[i]>0){const st=getTierStats(game.upgTier,i);
+    am+=st.atkPer*game.upgUnitLv[i];hm+=st.hpPer*game.upgUnitLv[i]}}
   game.cardAtkMult=am;game.cardHpMult=hm;game.cardFoodMult=fm;game.baseHpMult=bm;
   game.maxFood=100+game.shopBought[0]*50;
   game.foodRate=5+game.shopBought[2]*2+game.upgFood*2;
@@ -230,10 +227,9 @@ function pullCards(count,guaranteeEpic){
   recalcStats();saveGame();return results;
 }
 function skillCost(i){return Math.floor(SKILL_DEFS[i].baseCost*Math.pow(1.3,game.skillLv[i]))}
-function upgUnitLvCost(i){return Math.floor(100*Math.pow(1.3,game.upgUnitLv[i]-1))}
-function upgFoodCost(){return Math.floor(50*Math.pow(1.25,game.upgFood))}
-function upgBaseCost(){return Math.floor(100*Math.pow(1.35,game.upgBase))}
-function evoUnitCost(i){return Math.floor(EVO_DEFS[i].baseCost*Math.pow(1.5,game.evoLv[i]))}
+function upgUnitLvCost(i){return Math.floor((80+game.upgTier*20)*Math.pow(1.3,game.upgUnitLv[i]-1))}
+function upgFoodCost(){return Math.floor((50+game.upgTier*10)*Math.pow(1.25,game.upgFood))}
+function upgBaseCost(){return Math.floor((100+game.upgTier*20)*Math.pow(1.35,game.upgBase))}
 function shopCost(i){const s=SHOP_DEFS[i];return i<=2?Math.floor(s.baseCost*Math.pow(1.3,game.shopBought[i])):s.baseCost}
 function dungeonReward(id){
   const scale=1+game.planetLv*.3+(game.timeline-1)*.5;
@@ -380,14 +376,11 @@ function drawBg(pl){
 function mkUnit(def,isEnemy,x){
   const gy=H*.65,by=def.isAir?gy-60:gy-15;
   const es=isEnemy?enemyScale():1,ts=isEnemy?timelineScale():1;
-  let eam=1,ehm=1;
-  if(!isEnemy){const ei=UNIT_TYPES.findIndex(u=>u.id===def.id);
-    if(ei>=0&&game.evoLv[ei]>0){eam=1+EVO_DEFS[ei].atkPer*game.evoLv[ei];ehm=1+EVO_DEFS[ei].hpPer*game.evoLv[ei]}}
   return{id:uid++,x,y:by-(def.size||1)*10+rand(-3,3),isEnemy,
     shape:def.shape||def.id,name:def.name,
-    hp:Math.floor(def.hp*es*ts*(isEnemy?1:game.cardHpMult*ehm)),
-    maxHp:Math.floor(def.hp*es*ts*(isEnemy?1:game.cardHpMult*ehm)),
-    dmg:Math.floor(def.dmg*es*ts*(isEnemy?1:game.cardAtkMult*eam)),
+    hp:Math.floor(def.hp*es*ts*(isEnemy?1:game.cardHpMult)),
+    maxHp:Math.floor(def.hp*es*ts*(isEnemy?1:game.cardHpMult)),
+    dmg:Math.floor(def.dmg*es*ts*(isEnemy?1:game.cardAtkMult)),
     spd:def.spd,range:def.range,atkSpd:def.atkSpd,color:def.color,
     size:def.size||1,isAir:def.isAir||false,state:'MOVE',atkT:0,dieT:0}
 }
@@ -1005,54 +998,93 @@ function tapTabUpgrade(x,y){
 }
 
 // --- 업그레이드 서브탭: 업그레이드 ---
-function drawUpgUnit(id,x,y,sz,color){
-  ctx.save();ctx.translate(x,y);ctx.fillStyle=color;ctx.strokeStyle=color;const s=sz;
-  if(id===0){
-    // 경량 정찰선 - 작고 날렵한 삼각형
-    ctx.beginPath();ctx.moveTo(0,-s*.7);ctx.lineTo(s*.3,s*.3);ctx.lineTo(s*.15,s*.2);ctx.lineTo(0,s*.4);ctx.lineTo(-s*.15,s*.2);ctx.lineTo(-s*.3,s*.3);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#fff';ctx.globalAlpha=.4;ctx.beginPath();ctx.arc(0,-s*.15,s*.1,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
-  }else if(id===1){
-    // 전투 순양함 - 중간 크기, 날개 달린 우주선
-    ctx.beginPath();ctx.moveTo(0,-s*.8);ctx.lineTo(s*.2,-s*.1);ctx.lineTo(s*.5,s*.2);ctx.lineTo(s*.35,s*.35);ctx.lineTo(s*.15,s*.25);ctx.lineTo(0,s*.45);ctx.lineTo(-s*.15,s*.25);ctx.lineTo(-s*.35,s*.35);ctx.lineTo(-s*.5,s*.2);ctx.lineTo(-s*.2,-s*.1);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#fff';ctx.globalAlpha=.35;ctx.beginPath();ctx.ellipse(0,-s*.15,s*.08,s*.2,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
-    ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(s*.35,s*.35);ctx.lineTo(s*.3,s*.5);ctx.stroke();ctx.beginPath();ctx.moveTo(-s*.35,s*.35);ctx.lineTo(-s*.3,s*.5);ctx.stroke();
-  }else{
-    // 기함 - 크고 웅장한 전함
-    ctx.globalAlpha=.25;ctx.beginPath();ctx.moveTo(-s*.6,s*.1);ctx.lineTo(-s*.7,s*.5);ctx.lineTo(s*.7,s*.5);ctx.lineTo(s*.6,s*.1);ctx.closePath();ctx.fill();ctx.globalAlpha=1;
-    ctx.beginPath();ctx.moveTo(0,-s*.9);ctx.lineTo(s*.15,-s*.2);ctx.lineTo(s*.35,s*.1);ctx.lineTo(s*.25,s*.4);ctx.lineTo(0,s*.5);ctx.lineTo(-s*.25,s*.4);ctx.lineTo(-s*.35,s*.1);ctx.lineTo(-s*.15,-s*.2);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#fff';ctx.globalAlpha=.3;ctx.beginPath();ctx.ellipse(0,-s*.1,s*.1,s*.25,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
-    ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-s*.35,s*.1);ctx.lineTo(-s*.55,s*.15);ctx.stroke();ctx.beginPath();ctx.moveTo(s*.35,s*.1);ctx.lineTo(s*.55,s*.15);ctx.stroke();
+function drawTierShip(type,tier,x,y,sz){
+  ctx.save();ctx.translate(x,y);
+  const s=sz*(1+tier*.008),col=getTierColor(tier,type),d=Math.floor(tier/5),sub=tier%5;
+  ctx.fillStyle=col;ctx.strokeStyle=col;
+  if(tier>=15){ctx.shadowBlur=3+d*2;ctx.shadowColor=col}
+  if(type===0){// MELEE — 날카로운 돌격선
+    const w=s*(.24+d*.04);
+    ctx.beginPath();ctx.moveTo(0,-s*(.65+d*.06));
+    ctx.lineTo(w*.7,-s*.15);ctx.lineTo(w,s*.12);
+    if(d>=1){ctx.lineTo(w+s*(.1+d*.025),s*(.02+sub*.008));ctx.lineTo(w,s*.2)}
+    ctx.lineTo(w*.55,s*.32);ctx.lineTo(0,s*(.26+d*.02));
+    ctx.lineTo(-w*.55,s*.32);
+    if(d>=1){ctx.lineTo(-w,s*.2);ctx.lineTo(-w-s*(.1+d*.025),s*(.02+sub*.008))}
+    ctx.lineTo(-w,s*.12);ctx.lineTo(-w*.7,-s*.15);ctx.closePath();ctx.fill();
+    if(d>=3){ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,-s*(.65+d*.06));ctx.lineTo(0,-s*(.8+d*.06));ctx.stroke();
+      ctx.beginPath();ctx.moveTo(w*.4,-s*.22);ctx.lineTo(w+s*.1,-s*.32);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-w*.4,-s*.22);ctx.lineTo(-w-s*.1,-s*.32);ctx.stroke()}
+    if(d>=5){ctx.globalAlpha=.2;ctx.fillStyle='#fff';
+      ctx.beginPath();ctx.moveTo(0,-s*(.65+d*.06));ctx.lineTo(s*.04,-s*.3);ctx.lineTo(-s*.04,-s*.3);ctx.closePath();ctx.fill();ctx.globalAlpha=1}
+  }else if(type===1){// RANGED — 긴 포신의 포격선
+    const bw=s*(.17+d*.03);
+    ctx.fillRect(-s*.025,-s*(.72+d*.05),s*.05,s*(.38+d*.03));
+    if(d>=3){ctx.fillRect(bw-s*.012,-s*.22,s*.024,s*.14);ctx.fillRect(-bw-s*.012,-s*.22,s*.024,s*.14)}
+    if(d>=5){ctx.fillRect(-s*.015,-s*(.82+d*.05),s*.03,s*.1)}
+    ctx.beginPath();ctx.moveTo(0,-s*(.34+d*.02));ctx.lineTo(bw,s*.04);
+    ctx.lineTo(bw+s*(.14+d*.03),s*(.13+sub*.006));ctx.lineTo(bw,s*.24);
+    ctx.lineTo(bw*.55,s*(.36+d*.02));ctx.lineTo(0,s*(.3+d*.03));
+    ctx.lineTo(-bw*.55,s*(.36+d*.02));ctx.lineTo(-bw,s*.24);
+    ctx.lineTo(-bw-s*(.14+d*.03),s*(.13+sub*.006));ctx.lineTo(-bw,s*.04);ctx.closePath();ctx.fill();
+    if(d>=2){ctx.fillStyle='#fff';ctx.globalAlpha=.45;ctx.beginPath();ctx.arc(0,-s*(.52+d*.03),s*.03,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}
+    if(d>=4){ctx.fillStyle='#fff';ctx.globalAlpha=.2;
+      ctx.beginPath();ctx.ellipse(-bw*.35,s*(.34+d*.02),s*.025,s*.07,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(bw*.35,s*(.34+d*.02),s*.025,s*.07,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}
+  }else{// HEAVY — 두꺼운 중장선
+    const hw=s*(.28+d*.045);
+    ctx.beginPath();ctx.moveTo(0,-s*(.44+d*.04));ctx.lineTo(hw*.55,-s*.24);ctx.lineTo(hw,-.04*s);
+    ctx.lineTo(hw+s*(.04+d*.02),s*.16);ctx.lineTo(hw,s*.28);
+    ctx.lineTo(hw*.45,s*(.36+d*.02));ctx.lineTo(0,s*(.32+d*.03));
+    ctx.lineTo(-hw*.45,s*(.36+d*.02));ctx.lineTo(-hw,s*.28);
+    ctx.lineTo(-hw-s*(.04+d*.02),s*.16);ctx.lineTo(-hw,-.04*s);ctx.lineTo(-hw*.55,-s*.24);ctx.closePath();ctx.fill();
+    if(d>=1){ctx.globalAlpha=.35;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(-hw*.45,-.02*s);ctx.lineTo(hw*.45,-.02*s);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-hw*.5,s*.14);ctx.lineTo(hw*.5,s*.14);ctx.stroke();ctx.globalAlpha=1}
+    if(d>=3){ctx.lineWidth=2;ctx.beginPath();ctx.arc(hw+s*.04,s*.06,s*.065,-Math.PI/2,Math.PI/2);ctx.stroke();
+      ctx.beginPath();ctx.arc(-hw-s*.04,s*.06,s*.065,Math.PI/2,-Math.PI/2);ctx.stroke()}
+    if(d>=4){ctx.globalAlpha=.3;ctx.fillRect(-hw*.75,s*(.34+d*.02),hw*1.5,s*.05);ctx.globalAlpha=1}
+    if(d>=5){ctx.fillStyle='#fff';ctx.globalAlpha=.15;
+      ctx.beginPath();ctx.arc(0,0,hw*.8,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}
   }
-  ctx.restore();
+  // cockpit
+  ctx.fillStyle='#fff';ctx.globalAlpha=.3+sub*.03;
+  ctx.beginPath();ctx.arc(0,type===1?-s*.08:-s*.12,s*(.045+d*.007),0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+  if(d>=2){ctx.fillStyle='#fff';ctx.globalAlpha=.18+sub*.03;
+    const ey=type===2?s*(.3+d*.03):s*(.24+d*.02);
+    ctx.beginPath();ctx.ellipse(0,ey,s*.03,s*.07,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}
+  ctx.shadowBlur=0;ctx.restore();
 }
 function renderSubUpgrade(cy,ch){
-  drawText('공격 x'+game.cardAtkMult.toFixed(2)+'  체력 x'+game.cardHpMult.toFixed(2),W/2,cy+ch*.03,'#aaa',Math.min(W*.016,10));
-  // 3 units
-  const uc=UPG_UNITS.length,cw=Math.min((W*.75)/uc-10,140),crh=ch*.52;
+  const tier=game.upgTier,phase=Math.min(Math.floor(tier/5),5);
+  drawText('Tier '+(tier+1)+'  공격 x'+game.cardAtkMult.toFixed(2)+'  체력 x'+game.cardHpMult.toFixed(2),W/2,cy+ch*.03,'#aaa',Math.min(W*.016,10));
+  const uc=3,cw=Math.min((W*.75)/uc-10,140),crh=ch*.52;
   const gw=uc*(cw+10)-10,gx=(W-gw)/2,gy=cy+ch*.08;
   game._btns.upgBuy=[];game._btns.upgLvUp=[];
+  const typeDesc=['근접 돌격','원거리 포격','중장갑 전투'];
   for(let i=0;i<uc;i++){
-    const u=UPG_UNITS[i],cx=gx+i*(cw+10),unlocked=game.upgUnits[i];
-    ctx.fillStyle=unlocked?'#0a1520':'#080810';ctx.strokeStyle=unlocked?u.color:'#333';ctx.lineWidth=unlocked?2:1;
-    if(unlocked){ctx.shadowBlur=4;ctx.shadowColor=u.color}
+    const st=getTierStats(tier,i),col=getTierColor(tier,i),name=getTierName(tier,i);
+    const cx=gx+i*(cw+10),unlocked=game.upgUnits[i];
+    ctx.fillStyle=unlocked?'#0a1520':'#080810';ctx.strokeStyle=unlocked?col:'#333';ctx.lineWidth=unlocked?2:1;
+    if(unlocked){ctx.shadowBlur=4;ctx.shadowColor=col}
     roundRect(cx,gy,cw,crh,6);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
     if(unlocked){
-      drawUpgUnit(i,cx+cw/2,gy+crh*.22,crh*.28,u.color);
-      drawText(u.name,cx+cw/2,gy+crh*.45,u.color,Math.min(cw*.1,10));
-      drawText('Lv.'+game.upgUnitLv[i],cx+cw/2,gy+crh*.55,'#fff',Math.min(cw*.11,11));
-      const apct=Math.round(u.atkPer*game.upgUnitLv[i]*100),hpct=Math.round(u.hpPer*game.upgUnitLv[i]*100);
-      drawText('⚔'+apct+'%  ❤'+hpct+'%',cx+cw/2,gy+crh*.65,'#aaa',Math.min(cw*.08,8));
+      drawTierShip(i,tier,cx+cw/2,gy+crh*.22,crh*.28);
+      drawText(name,cx+cw/2,gy+crh*.45,col,Math.min(cw*.09,9));
+      drawText('Lv.'+game.upgUnitLv[i],cx+cw/2,gy+crh*.54,'#fff',Math.min(cw*.11,11));
+      const apct=Math.round(st.atkPer*game.upgUnitLv[i]*100),hpct=Math.round(st.hpPer*game.upgUnitLv[i]*100);
+      drawText('⚔'+apct+'%  ❤'+hpct+'%',cx+cw/2,gy+crh*.64,'#aaa',Math.min(cw*.08,8));
       const cost=upgUnitLvCost(i),can=game.coins>=cost;
       game._btns.upgLvUp[i]=drawBtn(cx+6,gy+crh*.75,cw-12,Math.min(crh*.12,28),'강화 💰'+cost,'#0a1a0a','#0f8',can);
     }else{
-      ctx.globalAlpha=.4;drawUpgUnit(i,cx+cw/2,gy+crh*.25,crh*.28,u.color);ctx.globalAlpha=1;
-      drawText('🔒',cx+cw/2,gy+crh*.5,'#555',16);
-      drawText(u.name,cx+cw/2,gy+crh*.62,'#666',Math.min(cw*.1,9));
-      const can=game.coins>=u.cost;
-      game._btns.upgBuy[i]=drawBtn(cx+6,gy+crh*.75,cw-12,Math.min(crh*.12,28),'💰'+u.cost,'#1a1a0a','#fa0',can);
+      ctx.globalAlpha=.4;drawTierShip(i,tier,cx+cw/2,gy+crh*.25,crh*.28);ctx.globalAlpha=1;
+      drawText('🔒',cx+cw/2,gy+crh*.48,'#555',16);
+      drawText(name,cx+cw/2,gy+crh*.6,'#666',Math.min(cw*.09,9));
+      drawText(typeDesc[i],cx+cw/2,gy+crh*.68,'#444',Math.min(cw*.07,7));
+      const can=game.coins>=st.cost;
+      game._btns.upgBuy[i]=drawBtn(cx+6,gy+crh*.75,cw-12,Math.min(crh*.12,28),'💰'+st.cost,'#1a1a0a','#fa0',can);
     }
   }
-  // food production + base HP
   const bw=Math.min(W*.75,gw+20),bx=(W-bw)/2,by=gy+crh+10,bh=Math.min(ch*.14,36);
   game._btns.upgFoodBtn=null;game._btns.upgBaseBtn=null;
   const foodRate=(5+game.shopBought[2]*2+game.upgFood*2)*game.cardFoodMult;
@@ -1061,7 +1093,6 @@ function renderSubUpgrade(cy,ch){
   drawText(foodRate.toFixed(1)+'/초',bx+bw*.45,by+bh/2,'#fff',Math.min(bw*.03,11));
   const fc=upgFoodCost(),fcan=game.coins>=fc;
   game._btns.upgFoodBtn=drawBtn(bx+bw-Math.min(bw*.28,110)-6,by+(bh-24)/2,Math.min(bw*.28,110),24,'💰'+fc,'#0a1a0a','#0f8',fcan);
-
   const by2=by+bh+6;
   const baseHP=500+game.shopBought[1]*100+game.upgBase*50;
   ctx.fillStyle='#0a0a18';ctx.strokeStyle='#333';ctx.lineWidth=1;roundRect(bx,by2,bw,bh,4);ctx.fill();ctx.stroke();
@@ -1071,9 +1102,11 @@ function renderSubUpgrade(cy,ch){
   game._btns.upgBaseBtn=drawBtn(bx+bw-Math.min(bw*.28,110)-6,by2+(bh-24)/2,Math.min(bw*.28,110),24,'💰'+bc,'#0a1a0a','#0f8',bcan);
 }
 function tapSubUpgrade(x,y){
-  for(let i=0;i<UPG_UNITS.length;i++){
+  const tier=game.upgTier;
+  for(let i=0;i<3;i++){
     if(!game.upgUnits[i]&&inBtn(game._btns.upgBuy[i],x,y)){
-      if(game.coins>=UPG_UNITS[i].cost){game.coins-=UPG_UNITS[i].cost;game.upgUnits[i]=true;game.upgUnitLv[i]=1;recalcStats();saveGame();sfx(523,.15,'sine',.12)}return}
+      const st=getTierStats(tier,i);
+      if(game.coins>=st.cost){game.coins-=st.cost;game.upgUnits[i]=true;game.upgUnitLv[i]=1;recalcStats();saveGame();sfx(523,.15,'sine',.12)}return}
     if(game.upgUnits[i]&&inBtn(game._btns.upgLvUp[i],x,y)){
       const cost=upgUnitLvCost(i);
       if(game.coins>=cost){game.coins-=cost;game.upgUnitLv[i]++;recalcStats();saveGame();sfx(523,.1,'sine',.1)}return}
@@ -1084,44 +1117,75 @@ function tapSubUpgrade(x,y){
 
 // --- 업그레이드 서브탭: 진화 ---
 function renderSubEvolution(cy,ch){
-  drawText('유닛 진화',W/2,cy+ch*.03,'#ff00ff',Math.min(W*.035,18));
-  const ec=EVO_DEFS.length,cw=Math.min((W*.9)/ec-8,120),crh=ch*.8;
-  const gw=ec*(cw+8)-8,gx=(W-gw)/2,gy=cy+ch*.1;
-  game._btns.evoUp=[];
-  for(let i=0;i<ec;i++){
-    const e=EVO_DEFS[i],cx=gx+i*(cw+8),lv=game.evoLv[i];
-    const locked=e.unlock&&game.planetLv<e.unlock,maxed=lv>=e.maxLv;
-    ctx.globalAlpha=locked?.3:1;ctx.fillStyle=lv>0?'#0a1520':'#080810';
-    ctx.strokeStyle=locked?'#222':(lv>0?e.color:'#444');ctx.lineWidth=lv>0?2:1;
-    roundRect(cx,gy,cw,crh,6);ctx.fill();ctx.stroke();
-    // unit shape
-    ctx.save();ctx.translate(cx+cw/2,gy+crh*.18);ctx.fillStyle=e.color;ctx.strokeStyle=e.color;ctx.lineWidth=1;
-    const fn=SHAPES[e.unit];if(fn)fn(ctx,.35,Date.now()*.001);ctx.restore();
-    drawText(e.name,cx+cw/2,gy+crh*.35,e.color,Math.min(cw*.1,9));
-    // stars
-    let stars='';for(let j=0;j<e.maxLv;j++)stars+=j<lv?'★':'☆';
-    drawText(stars,cx+cw/2,gy+crh*.45,lv>0?'#fa0':'#444',Math.min(cw*.08,8));
-    if(lv>0){
-      const apct=Math.round(e.atkPer*lv*100),hpct=Math.round(e.hpPer*lv*100);
-      drawText('⚔+'+apct+'% ❤+'+hpct+'%',cx+cw/2,gy+crh*.55,'#aaa',Math.min(cw*.08,7));
+  const tier=game.upgTier,maxed=tier>=29;
+  const nextTier=tier+1;
+  drawText('함대 진화',W/2,cy+ch*.03,'#ff00ff',Math.min(W*.035,18));
+  // current tier
+  const cw=Math.min(W*.38,280),crh=ch*.6;
+  const lx=(W/2-cw)/2-10,rx=W/2+(W/2-cw)/2+10;
+  // left box: current
+  ctx.fillStyle='#0a0a18';ctx.strokeStyle='#444';ctx.lineWidth=1;
+  roundRect(lx,cy+ch*.1,cw,crh,6);ctx.fill();ctx.stroke();
+  drawText('현재 Tier '+(tier+1),lx+cw/2,cy+ch*.14,'#aaa',Math.min(W*.02,12));
+  const shipSz=Math.min(crh*.18,30);
+  for(let i=0;i<3;i++){
+    const sx=lx+cw*(i+1)/4,sy=cy+ch*.1+crh*.35;
+    drawTierShip(i,tier,sx,sy,shipSz);
+    drawText(getTierName(tier,i),sx,sy+shipSz+12,getTierColor(tier,i),Math.min(cw*.07,7));
+  }
+  const curSt0=getTierStats(tier,0);
+  drawText('레벨당 공격 +'+Math.round(curSt0.atkPer*100)+'%',lx+cw/2,cy+ch*.1+crh*.75,'#888',Math.min(W*.015,9));
+  // arrow
+  const ax=W/2,ay=cy+ch*.1+crh/2;
+  if(!maxed){
+    ctx.save();ctx.shadowBlur=6;ctx.shadowColor='#f0f';ctx.fillStyle='#f0f';
+    ctx.beginPath();ctx.moveTo(ax-12,ay-8);ctx.lineTo(ax+8,ay);ctx.lineTo(ax-12,ay+8);ctx.closePath();ctx.fill();
+    ctx.shadowBlur=0;ctx.restore();
+  }
+  // right box: next tier
+  if(!maxed){
+    ctx.fillStyle='#0a0a20';ctx.strokeStyle='#f0f';ctx.lineWidth=1.5;
+    ctx.shadowBlur=4;ctx.shadowColor='#f0f';
+    roundRect(rx,cy+ch*.1,cw,crh,6);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+    drawText('Tier '+(nextTier+1),rx+cw/2,cy+ch*.14,'#f0f',Math.min(W*.02,12));
+    for(let i=0;i<3;i++){
+      const sx=rx+cw*(i+1)/4,sy=cy+ch*.1+crh*.35;
+      drawTierShip(i,nextTier,sx,sy,shipSz);
+      drawText(getTierName(nextTier,i),sx,sy+shipSz+12,getTierColor(nextTier,i),Math.min(cw*.07,7));
     }
-    if(locked){drawText('🔒 Lv.'+e.unlock,cx+cw/2,gy+crh*.7,'#555',Math.min(cw*.09,9));
-    }else if(maxed){drawText('MAX',cx+cw/2,gy+crh*.7,'#fa0',Math.min(cw*.1,11));
-    }else{
-      const cost=evoUnitCost(i),can=game.coins>=cost;
-      game._btns.evoUp[i]=drawBtn(cx+6,gy+crh*.63,cw-12,Math.min(crh*.1,26),'진화 💰'+cost,'#1a0a2a','#f0f',can);
-      if(lv===0)drawText('공격/체력 강화',cx+cw/2,gy+crh*.82,'#666',Math.min(cw*.07,7));
-    }
-    ctx.globalAlpha=1;
+    const nxtSt0=getTierStats(nextTier,0);
+    drawText('레벨당 공격 +'+Math.round(nxtSt0.atkPer*100)+'%',rx+cw/2,cy+ch*.1+crh*.75,'#c8c',Math.min(W*.015,9));
+  }else{
+    ctx.fillStyle='#0a0a20';ctx.strokeStyle='#fa0';ctx.lineWidth=2;
+    roundRect(rx,cy+ch*.1,cw,crh,6);ctx.fill();ctx.stroke();
+    ctx.save();ctx.shadowBlur=10;ctx.shadowColor='#fa0';
+    drawText('MAX TIER',rx+cw/2,cy+ch*.1+crh*.4,'#fa0',Math.min(W*.04,22));
+    ctx.shadowBlur=0;ctx.restore();
+    drawText('최강 함대 달성',rx+cw/2,cy+ch*.1+crh*.6,'#888',Math.min(W*.02,12));
+  }
+  // evolve button + warning
+  game._btns.tierEvo=null;
+  if(!maxed){
+    const cost=getTierEvoCost(tier),can=game.coins>=cost;
+    const bw2=Math.min(W*.3,200),bh2=38,bx2=W/2-bw2/2,by2=cy+ch*.1+crh+15;
+    const t2=Date.now()*.001,pulse=can?1+Math.sin(t2*3)*.04:1;
+    ctx.save();ctx.translate(W/2,by2+bh2/2);ctx.scale(pulse,pulse);ctx.translate(-W/2,-(by2+bh2/2));
+    game._btns.tierEvo=drawBtn(bx2,by2,bw2,bh2,'⬆ 진화하기 💰'+cost,'#1a0a2a','#f0f',can);
+    ctx.restore();
+    drawText('⚠ 모든 업그레이드가 초기화됩니다',W/2,by2+bh2+14,'#f44',Math.min(W*.016,10));
   }
 }
 function tapSubEvolution(x,y){
-  if(!game._btns.evoUp)return;
-  for(let i=0;i<EVO_DEFS.length;i++){
-    const e=EVO_DEFS[i],locked=e.unlock&&game.planetLv<e.unlock;
-    if(!locked&&game.evoLv[i]<e.maxLv&&inBtn(game._btns.evoUp[i],x,y)){
-      const cost=evoUnitCost(i);
-      if(game.coins>=cost){game.coins-=cost;game.evoLv[i]++;saveGame();sfx(523,.15,'sine',.12);setTimeout(()=>sfx(784,.2,'sine',.12),150)}return}
+  if(game.upgTier>=29)return;
+  if(inBtn(game._btns.tierEvo,x,y)){
+    const cost=getTierEvoCost(game.upgTier);
+    if(game.coins>=cost){
+      game.coins-=cost;game.upgTier++;
+      game.upgUnits=[true,false,false];game.upgUnitLv=[1,0,0];
+      game.upgFood=0;game.upgBase=0;
+      recalcStats();saveGame();
+      sfx(523,.15,'sine',.15);setTimeout(()=>sfx(659,.15,'sine',.15),150);setTimeout(()=>sfx(784,.3,'sine',.15),300);
+    }
   }
 }
 
@@ -1225,7 +1289,7 @@ function saveGame(){try{localStorage.setItem('starConquest2',JSON.stringify({
   ci:game.cardInv,dc:game.dungeonCD,sb:game.shopBought,snd:game.soundOn,
   sl:game.skillLv,ri:game.runeInv,re:game.runeEquipped,
   uu:game.upgUnits,ul:game.upgUnitLv,uf:game.upgFood,ub:game.upgBase,
-  el:game.evoLv,eq:game.equipment,tk:game.totalKills
+  ut:game.upgTier,eq:game.equipment,tk:game.totalKills
 }))}catch(e){}}
 function loadGame(){try{const d=JSON.parse(localStorage.getItem('starConquest2'));if(d){
   game.gems=d.g||0;game.coins=d.co||0;game.timeline=d.tl||1;game.highestPlanet=d.hp||1;
@@ -1240,7 +1304,7 @@ function loadGame(){try{const d=JSON.parse(localStorage.getItem('starConquest2')
   if(d.ul)game.upgUnitLv=d.ul;
   if(d.uf!==undefined)game.upgFood=d.uf;
   if(d.ub!==undefined)game.upgBase=d.ub;
-  if(d.el)game.evoLv=d.el;
+  if(d.ut!==undefined)game.upgTier=d.ut;
   if(d.eq)game.equipment=d.eq;
   if(d.tk!==undefined)game.totalKills=d.tk;
   recalcStats();
