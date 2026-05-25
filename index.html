@@ -45,37 +45,27 @@ const PLANET_THEMES=[
    enemies:[
     {name:'화염 벌레',hp:25,dmg:6,spd:2.5,range:25,atkSpd:1.2,color:'#ff4400',shape:'bug',size:.7,w:5},
     {name:'용암 골렘',hp:100,dmg:18,spd:.8,range:30,atkSpd:.5,color:'#ff6600',shape:'golem',size:1.3,w:2},
-    {name:'화산 비룡',hp:60,dmg:25,spd:1.5,range:50,atkSpd:.8,color:'#ff2200',shape:'dragon',size:1.1,w:1,isAir:true},
-    {name:'돌격 벌레',hp:15,dmg:4,spd:5,range:20,atkSpd:1.5,color:'#ffaa00',shape:'bug',size:.5,w:3,trait:'rusher'},
-    {name:'화염 분열체',hp:40,dmg:8,spd:2,range:25,atkSpd:1.0,color:'#ff8800',shape:'blob',size:.9,w:2,trait:'splitter'}]},
+    {name:'화산 비룡',hp:60,dmg:25,spd:1.5,range:50,atkSpd:.8,color:'#ff2200',shape:'dragon',size:1.1,w:1,isAir:true}]},
   {name:'크리오스',sub:'얼음 행성',bgTop:'#050515',bgBot:'#0a1a3a',ground:'#1a2a4a',surface:'#4488ff',
    enemies:[
-    {name:'얼음 정령',hp:35,dmg:10,spd:3,range:25,atkSpd:1.0,color:'#88ccff',shape:'spirit',size:.8,w:5},
-    {name:'프로스트 가드',hp:130,dmg:20,spd:.7,range:35,atkSpd:.6,color:'#4488ff',shape:'guard',size:1.2,w:2},
-    {name:'빙하 타이탄',hp:200,dmg:30,spd:.5,range:40,atkSpd:.4,color:'#2266ff',shape:'titan',size:1.5,w:1},
-    {name:'빙결 치유사',hp:50,dmg:8,spd:1.5,range:30,atkSpd:1.0,color:'#66ddff',shape:'spirit',size:.7,w:2,trait:'healer'},
-    {name:'얼음 방패병',hp:120,dmg:14,spd:.8,range:25,atkSpd:.7,color:'#aaeeff',shape:'guard',size:1.1,w:2,trait:'shield'}]},
+    {name:'얼음 정령',hp:35,dmg:10,spd:3,range:25,atkSpd:1.0,color:'#88ccff',shape:'spirit',size:.8,w:5,trait:'rusher'},
+    {name:'프로스트 가드',hp:130,dmg:20,spd:.7,range:35,atkSpd:.6,color:'#4488ff',shape:'guard',size:1.2,w:2,trait:'shield'},
+    {name:'빙하 타이탄',hp:200,dmg:30,spd:.5,range:40,atkSpd:.4,color:'#2266ff',shape:'titan',size:1.5,w:1}]},
   {name:'톡시아',sub:'독성 행성',bgTop:'#0a0515',bgBot:'#1a2a0a',ground:'#2a3a0a',surface:'#44ff00',
    enemies:[
-    {name:'독충',hp:20,dmg:8,spd:3.5,range:20,atkSpd:1.5,color:'#44ff00',shape:'bug',size:.6,w:6},
-    {name:'산성 슬라임',hp:90,dmg:15,spd:1.2,range:35,atkSpd:.8,color:'#88ff44',shape:'blob',size:1.1,w:3},
-    {name:'뮤턴트 킹',hp:180,dmg:35,spd:.6,range:45,atkSpd:.5,color:'#00ff44',shape:'king',size:1.4,w:1},
-    {name:'독성 돌격충',hp:12,dmg:6,spd:6,range:18,atkSpd:1.8,color:'#aaff00',shape:'bug',size:.4,w:3,trait:'rusher'},
-    {name:'독성 분열체',hp:50,dmg:12,spd:1.5,range:30,atkSpd:.9,color:'#66ff22',shape:'blob',size:.9,w:2,trait:'splitter'}]},
+    {name:'독충',hp:20,dmg:8,spd:3.5,range:20,atkSpd:1.5,color:'#44ff00',shape:'bug',size:.6,w:6,trait:'rusher'},
+    {name:'산성 슬라임',hp:90,dmg:15,spd:1.2,range:35,atkSpd:.8,color:'#88ff44',shape:'blob',size:1.1,w:3,trait:'splitter'},
+    {name:'뮤턴트 킹',hp:180,dmg:35,spd:.6,range:45,atkSpd:.5,color:'#00ff44',shape:'king',size:1.4,w:1,trait:'healer'}]},
   {name:'네뷸라',sub:'성운 행성',bgTop:'#150520',bgBot:'#2a0a3a',ground:'#2a1a3a',surface:'#aa44ff',
    enemies:[
-    {name:'성운 유령',hp:40,dmg:12,spd:3,range:30,atkSpd:1.3,color:'#cc66ff',shape:'spirit',size:.8,w:5},
-    {name:'에너지 구체',hp:70,dmg:22,spd:2,range:60,atkSpd:1.0,color:'#aa44ff',shape:'orb',size:1.0,w:3},
-    {name:'차원 군주',hp:250,dmg:40,spd:.5,range:50,atkSpd:.4,color:'#8822ff',shape:'lord',size:1.5,w:1},
-    {name:'성운 치유사',hp:55,dmg:10,spd:1.8,range:35,atkSpd:1.1,color:'#dd88ff',shape:'spirit',size:.7,w:2,trait:'healer'},
-    {name:'차원 방패',hp:140,dmg:18,spd:.7,range:30,atkSpd:.6,color:'#bb66ff',shape:'guard',size:1.2,w:2,trait:'shield'}]},
+    {name:'성운 유령',hp:40,dmg:12,spd:3,range:30,atkSpd:1.3,color:'#cc66ff',shape:'spirit',size:.8,w:5,trait:'shield'},
+    {name:'에너지 구체',hp:70,dmg:22,spd:2,range:60,atkSpd:1.0,color:'#aa44ff',shape:'orb',size:1.0,w:3,trait:'healer'},
+    {name:'차원 군주',hp:250,dmg:40,spd:.5,range:50,atkSpd:.4,color:'#8822ff',shape:'lord',size:1.5,w:1,trait:'splitter'}]},
   {name:'다크론',sub:'암흑 행성',bgTop:'#050505',bgBot:'#1a0a0a',ground:'#1a0a0a',surface:'#ff0044',
    enemies:[
-    {name:'그림자 병사',hp:50,dmg:15,spd:2.8,range:30,atkSpd:1.2,color:'#ff2244',shape:'shadow',size:.9,w:5},
-    {name:'암흑 기사',hp:160,dmg:30,spd:1.0,range:35,atkSpd:.7,color:'#ff0044',shape:'knight',size:1.3,w:3},
-    {name:'심연의 군주',hp:350,dmg:50,spd:.4,range:55,atkSpd:.3,color:'#cc0033',shape:'lord',size:1.6,w:1},
-    {name:'암흑 돌격병',hp:30,dmg:12,spd:5.5,range:22,atkSpd:1.4,color:'#ff6666',shape:'shadow',size:.6,w:3,trait:'rusher'},
-    {name:'심연 분열체',hp:80,dmg:16,spd:1.2,range:28,atkSpd:.8,color:'#ff4466',shape:'blob',size:1.0,w:2,trait:'splitter'}]},
+    {name:'그림자 병사',hp:50,dmg:15,spd:2.8,range:30,atkSpd:1.2,color:'#ff2244',shape:'shadow',size:.9,w:5,trait:'rusher'},
+    {name:'암흑 기사',hp:160,dmg:30,spd:1.0,range:35,atkSpd:.7,color:'#ff0044',shape:'knight',size:1.3,w:3,trait:'shield'},
+    {name:'심연의 군주',hp:350,dmg:50,spd:.4,range:55,atkSpd:.3,color:'#cc0033',shape:'lord',size:1.6,w:1,trait:'splitter'}]},
 ];
 
 const TAB_DEFS=[
@@ -545,7 +535,7 @@ function spawnUnit(i){
 }
 function spawnEnemy(){
   const pl=curPlanetTheme();
-  const avail=pl.enemies.filter((_,i)=>i===0||i===1&&game.bTime>8||i===2&&game.bTime>20||i===3&&game.bTime>30||i===4&&game.bTime>45);
+  const avail=pl.enemies.filter((_,i)=>i===0||i===1&&game.bTime>8||i===2&&game.bTime>20);
   let tw=0;for(const e of avail)tw+=e.w;
   let r=rand(0,tw),sel=avail[0];
   for(const e of avail){r-=e.w;if(r<=0){sel=e;break}}
