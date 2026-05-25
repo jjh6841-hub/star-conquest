@@ -110,6 +110,21 @@ function getTierColor(tier,type){const h=([170,35,270][type]+tier*8)%360;return'
 function getTierName(tier,type){const p=Math.min(Math.floor(tier/5),5),sub=tier%5;return sub>0?TIER_NAMES[type][p]+' Mk.'+(sub+1):TIER_NAMES[type][p]}
 function getTierStats(tier,type){const s=1+tier*.15;return{atkPer:[.02,.01,.015][type]*s,hpPer:[.01,.02,.025][type]*s,cost:type===0?0:Math.floor([0,800,2000][type]*Math.pow(1.1,tier))}}
 function getTierEvoCost(tier){return Math.floor(500*Math.pow(1.2,tier))}
+function getPlayerUnits(){
+  const tier=game.upgTier,sc=1+tier*.12;
+  const base=[
+    {cost:Math.floor(8*(1+tier*.12)),cd:1.5,hp:40,dmg:12,spd:3,range:30,atkSpd:1.2,size:.9},
+    {cost:Math.floor(15*(1+tier*.12)),cd:3.0,hp:30,dmg:20,spd:1.5,range:120,atkSpd:.5,size:.9},
+    {cost:Math.floor(25*(1+tier*.12)),cd:4.5,hp:120,dmg:15,spd:1,range:30,atkSpd:.5,size:1.1},
+  ];
+  return base.map((d,i)=>{
+    const lv=game.upgUnits[i]?game.upgUnitLv[i]:0;
+    const lm=lv>0?1+(lv-1)*.1:1;
+    return{...d,name:getTierName(tier,i),color:getTierColor(tier,i),
+      hp:Math.floor(d.hp*sc*lm),dmg:Math.floor(d.dmg*sc*lm),
+      tierType:i,unlocked:game.upgUnits[i]};
+  });
+}
 const SKILL_DEFS=[
   {id:0,name:'공격 강화',desc:'전 유닛 공격력',stat:'atk',perLv:.03,baseCost:50,color:'#ff4444',maxLv:20},
   {id:1,name:'방어 강화',desc:'전 유닛 체력',stat:'hp',perLv:.03,baseCost:50,color:'#44ff88',maxLv:20},
@@ -157,7 +172,7 @@ let game={
   pUnits:[],eUnits:[],projs:[],parts:[],
   pBaseHP:500,pBaseMax:500,eBaseHP:0,eBaseMax:0,
   espTimer:2,bTime:0,battleCoins:0,
-  unitCD:[0,0,0,0,0],
+  unitCD:[0,0,0],
   // stats
   totalKills:0,highestPlanet:1,
   // permanent (computed by recalcStats)
@@ -298,7 +313,8 @@ function drawUnit(u){
   ctx.shadowBlur=8;ctx.shadowColor=u.color;ctx.fillStyle=u.color;ctx.strokeStyle=u.color;ctx.lineWidth=2;
   if(u.state==='ATTACK')ctx.globalAlpha=.6+Math.sin(t*15)*.4;
   if(u.state==='DIE'){ctx.globalAlpha=.3;ctx.scale(.8,.8)}
-  const fn=SHAPES[u.shape];if(fn)fn(ctx,u.size,t);
+  if(u.tierType!=null){ctx.rotate(-Math.PI/2);drawTierShip(u.tierType,game.upgTier,0,0,u.size*15)}
+  else{const fn=SHAPES[u.shape];if(fn)fn(ctx,u.size,t)}
   ctx.shadowBlur=0;ctx.restore();
   if(u.hp<u.maxHp&&u.state!=='DIE'){const bw=30*u.size;drawBar(u.x-bw/2,u.y-28*u.size+hover,bw,3,u.hp,u.maxHp,u.color)}
 }
@@ -383,7 +399,7 @@ function mkUnit(def,isEnemy,x){
   const gy=GY,by=def.isAir?gy-60:gy-15;
   const es=isEnemy?enemyScale():1,ts=isEnemy?timelineScale():1;
   return{id:uid++,x,y:by-(def.size||1)*10+rand(-3,3),isEnemy,
-    shape:def.shape||def.id,name:def.name,
+    shape:def.shape||def.id,name:def.name,tierType:def.tierType,
     hp:Math.floor(def.hp*es*ts*(isEnemy?1:game.cardHpMult)),
     maxHp:Math.floor(def.hp*es*ts*(isEnemy?1:game.cardHpMult)),
     dmg:Math.floor(def.dmg*es*ts*(isEnemy?1:game.cardAtkMult)),
@@ -391,8 +407,9 @@ function mkUnit(def,isEnemy,x){
     size:def.size||1,isAir:def.isAir||false,state:'MOVE',atkT:0,dieT:0}
 }
 function spawnUnit(i){
-  if(i>=UNIT_TYPES.length)return;const t=UNIT_TYPES[i];
-  if(t.unlock>game.planetLv||game.food<t.cost||game.unitCD[i]>0||game.pUnits.length>=30||game.battleState!=='FIGHTING')return;
+  const units=getPlayerUnits();
+  if(i>=3||!units[i].unlocked)return;const t=units[i];
+  if(game.food<t.cost||game.unitCD[i]>0||game.pUnits.length>=30||game.battleState!=='FIGHTING')return;
   game.food-=t.cost;game.unitCD[i]=t.cd;
   game.pUnits.push(mkUnit(t,false,W*.15));sfx(800,.08,'square',.1);
 }
@@ -443,7 +460,7 @@ function updateBattle(dt){
   // food
   game.food=Math.min(game.maxFood,game.food+game.foodRate*game.cardFoodMult*sdt);
   // cooldowns
-  for(let i=0;i<5;i++)if(game.unitCD[i]>0)game.unitCD[i]=Math.max(0,game.unitCD[i]-sdt);
+  for(let i=0;i<3;i++)if(game.unitCD[i]>0)game.unitCD[i]=Math.max(0,game.unitCD[i]-sdt);
   // enemy spawn
   const si=Math.max(.8,2.5-game.bTime*.01);
   game.espTimer-=sdt;if(game.espTimer<=0){spawnEnemy();game.espTimer=si}
@@ -707,56 +724,59 @@ function renderBattleHUD(){
   game._btns.speed={x:8,y:sy,w:W*.3,h:20};
 }
 
-// --- 배틀 유닛카드 (레퍼런스 스타일) ---
+// --- 배틀 유닛카드 (3유닛 시스템) ---
 function renderBattleUnitCards(){
-  // panel at bottom
+  const units=getPlayerUnits();
   const panelH=H*.22,panelY=H-panelH;
   ctx.fillStyle='rgba(5,5,12,.92)';ctx.fillRect(0,panelY,W,panelH);
-  // unit cards row
-  const uc=UNIT_TYPES.length;
-  const gap=8,cw=Math.min((W-24)/uc-gap,72),ch=panelH*.55;
-  const gw=uc*(cw+gap)-gap,sx=(W-gw)/2,cy=panelY+10;
+  // count visible (unlocked) cards
+  const visible=units.filter(u=>u.unlocked);
+  const vc=visible.length,gap=10;
+  const cw=Math.min((W-40)/Math.max(vc,1)-gap,90),ch=panelH*.52;
+  const gw=vc*(cw+gap)-gap,sx=(W-gw)/2,cy=panelY+10;
   game._btns.units=[];
-  for(let i=0;i<uc;i++){
-    const t=UNIT_TYPES[i],bx=sx+i*(cw+gap);
-    const unlocked=t.unlock<=game.planetLv;
+  let ci=0;
+  for(let i=0;i<3;i++){
+    if(!units[i].unlocked)continue;
+    const t=units[i],bx=sx+ci*(cw+gap);
     const canAfford=game.food>=t.cost&&game.unitCD[i]<=0;
-    const ok=unlocked&&canAfford&&game.battleState==='FIGHTING';
-    ctx.globalAlpha=unlocked?(ok?1:.5):.25;
-    ctx.fillStyle=ok?'#111820':'#0a0a12';ctx.strokeStyle=ok?t.color:'#222';ctx.lineWidth=ok?2:1;
-    if(ok){ctx.shadowBlur=4;ctx.shadowColor=t.color}
+    const ok=canAfford&&game.battleState==='FIGHTING';
+    ctx.globalAlpha=ok?1:.5;
+    ctx.fillStyle=ok?'#111820':'#0a0a12';ctx.strokeStyle=ok?t.color:'#333';ctx.lineWidth=ok?2:1;
+    if(ok){ctx.shadowBlur=5;ctx.shadowColor=t.color}
     roundRect(bx,cy,cw,ch,8);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
-    if(unlocked){
-      ctx.save();ctx.translate(bx+cw/2,cy+ch*.35);ctx.fillStyle=t.color;ctx.strokeStyle=t.color;ctx.lineWidth=1;
-      const fn=SHAPES[t.shape];if(fn)fn(ctx,.35,Date.now()*.001);ctx.restore();
-      drawText(t.name,bx+cw/2,cy+ch*.75,t.color,Math.min(cw*.14,9));
-      if(game.unitCD[i]>0){
-        ctx.fillStyle='rgba(0,0,0,.65)';roundRect(bx,cy,cw,ch,8);ctx.fill();
-        drawText(game.unitCD[i].toFixed(1)+'s',bx+cw/2,cy+ch*.45,'#fff',12);
-      }
-    }else{
-      drawText('🔒',bx+cw/2,cy+ch*.38,'#444',20);
-      drawText('Lv.'+t.unlock,bx+cw/2,cy+ch*.72,'#444',8);
+    // ship icon (rotated for horizontal display)
+    ctx.save();ctx.translate(bx+cw/2,cy+ch*.35);ctx.rotate(-Math.PI/2);
+    drawTierShip(i,game.upgTier,0,0,Math.min(ch*.2,14));
+    ctx.restore();
+    drawText(t.name,bx+cw/2,cy+ch*.75,t.color,Math.min(cw*.13,10));
+    if(game.unitCD[i]>0){
+      ctx.fillStyle='rgba(0,0,0,.65)';roundRect(bx,cy,cw,ch,8);ctx.fill();
+      drawText(game.unitCD[i].toFixed(1)+'s',bx+cw/2,cy+ch*.4,'#fff',13);
     }
     ctx.globalAlpha=1;
     if(ok)game._btns.units.push({x:bx,y:cy,w:cw,h:ch,i});
+    ci++;
   }
   // cost row below cards
-  for(let i=0;i<uc;i++){
-    const t=UNIT_TYPES[i],bx=sx+i*(cw+gap);
-    if(t.unlock<=game.planetLv)drawText('🍖'+t.cost,bx+cw/2,cy+ch+14,game.food>=t.cost?'#fc0':'#555',11);
+  ci=0;
+  for(let i=0;i<3;i++){
+    if(!units[i].unlocked)continue;
+    const bx=sx+ci*(cw+gap);
+    drawText('🍖'+units[i].cost,bx+cw/2,cy+ch+15,game.food>=units[i].cost?'#fc0':'#555',12);
+    ci++;
   }
   // food display (bottom left)
-  const fy=H-panelH*.18;
-  const foodBarW=W*.18;
-  drawBar(10,fy-4,foodBarW,8,game.food,game.maxFood,'#fa0');
-  drawText('🍖'+Math.floor(game.food),14+foodBarW,fy,'#fc0',12,'left');
-  // action buttons (only when needed)
+  const fy=H-panelH*.16;
+  const fbw=W*.18;
+  drawBar(10,fy-4,fbw,8,game.food,game.maxFood,'#fa0');
+  drawText('🍖'+Math.floor(game.food),14+fbw,fy,'#fc0',12,'left');
+  // action buttons
   if(game.battleState==='CLEARED'){
     const canEvo=game.coins>=evoCost();
-    const bw2=Math.min(W*.3,120),bh2=30,aby=fy-8;
-    game._btns.evo=drawBtn(W/2-bw2-4,aby,bw2,bh2,'⬆ 진화 💰'+evoCost(),'#0a2a0a','#0f8',canEvo);
-    game._btns.homeBtn=drawBtn(W/2+4,aby,bw2,bh2,'🏠 홈으로','#0a0a2a','#0ff');
+    const bw2=Math.min(W*.3,120),bh2=30;
+    game._btns.evo=drawBtn(W/2-bw2-4,fy-8,bw2,bh2,'⬆ 진화 💰'+evoCost(),'#0a2a0a','#0f8',canEvo);
+    game._btns.homeBtn=drawBtn(W/2+4,fy-8,bw2,bh2,'🏠 홈으로','#0a0a2a','#0ff');
   }else if(game.battleState==='FIGHTING'){
     const gbw=Math.min(W*.2,78),gbh=26;
     game._btns.giveup=drawBtn(W-gbw-10,fy-6,gbw,gbh,'포기/리셋','#1a0808','#f44');
